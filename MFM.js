@@ -42,7 +42,7 @@ function mfm2React2(_styles, emojis) {
             case 'link':
                 return <Pressable key={i} onPress={() => Linking.openURL(node.props.url)}><Text>{node.children.map(mfm2React2({..._styles, ...styles.url}, emojis))}</Text></Pressable>;
             case 'quote':
-                // FIXME: Style this
+                // FIXME: Style this better
                 return <Text key={i} style={styles.quote}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis))}{"\n\n"}</Text>;
             case 'emojiCode':
                 for (const el of emojis) {
@@ -51,6 +51,8 @@ function mfm2React2(_styles, emojis) {
                     }
                 }
                 return <Text key={i}>:{node.props.name}:</Text>
+            case 'center':
+                return <Text key={i} style={styles.center}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis))}</Text>;
             default:
                     console.error(node);
                     throw new Error('Unhandled MFM type: ' + node.type);
@@ -66,6 +68,7 @@ function applyMFMfunc(node, i, _styles) {
     let newstyles;
     switch (node.props.name) {
     case 'flip':
+        console.log(node);
         // FIXME: This should be the equivalent of inline-block.
         if (!node.props.args ||
             Object.keys(node.props.args).length === 0
@@ -127,5 +130,11 @@ const styles = StyleSheet.create({
         padding: 20,
         fontStyle: 'italic',
         color: '#555',
+        borderStyle: 'solid',
+        borderLeftWidth: 30,
+        borderLeftColor: '#555',
+    },
+    center: {
+        textAlign: 'center',
     }
 });

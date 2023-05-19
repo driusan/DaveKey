@@ -3,24 +3,25 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
-import { Button, DrawerLayoutAndroid, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
+import { Image, Button, DrawerLayoutAndroid, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
+import MFM from './MFM';
 import React, {useState,useEffect, useCallback, useContext, createContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PostList } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
+import { AccountContext, useCalckeyAccount} from './Account';
+import { MyProfile } from './Profile';
 
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-const AccountContext = createContext(null);
-
-
 function Article() {
     return <View><Text>Timeline</Text></View>;
 }
+
 function ActionsStack({ navigation, route }) {
       return (
           <Stack.Navigator screenOptions={{headerShown: false}}>
@@ -40,9 +41,15 @@ function Logout({navigation, route}) {
     }, [account]);
     return <View><Text>Logging out..</Text></View>;
 }
+
 function ActionsDrawer(props) {
+      const account = useContext(AccountContext);
+      const name = account.mentionName();
+      const profileLink = name == '' ? null :
+        <Drawer.Screen name={account.mentionName()} component={MyProfile} />;
       return (
           <Drawer.Navigator screenOptions={{ headerShown: false }}>
+              {profileLink}
               <Drawer.Screen name="Home" component={ActionsStack} />
               <Drawer.Screen name="Logout" component={Logout} />
           </Drawer.Navigator>
@@ -198,52 +205,6 @@ export default function App() {
         </NavigationContainer>
       </AccountContext.Provider>
     );
-}
-
-function useCalckeyAccount() {
-  const [accessToken, setAccessToken] = useState(null);
-  const [instance, setInstance] = useState('');
-  useEffect(() => {
-          AsyncStorage.getItem('@i').then(setAccessToken);
-          AsyncStorage.getItem('@instance').then(setInstance);
-  }, [instance, accessToken]);
-  useEffect(() => {
-      /*
-      if (!accessToken || !instance) {
-          return;
-      }
-      fetch('https://' + instance + "/api/meta",
-      {
-          method: 'POST',
-          headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-          },
-          credentials: "omit",
-          body: JSON.stringify({i: accessToken})
-      }).then( (resp) => resp.json())
-      .then( (json) => console.log(json))
-      .catch((e) => console.error(e));
-      */
-  }, [instance, accessToken]);
-
-
-  return {
-      i: accessToken,
-      instance: instance,
-      login: (i, instance) => {
-          setAccessToken(i);
-          setInstance(instance);
-          AsyncStorage.setItem('@i', i);
-          AsyncStorage.setItem('@instance', instance);
-      },
-      logout: () => {
-          setAccessToken(null);
-          setInstance('');
-          AsyncStorage.removeItem('@i');
-          AsyncStorage.removeItem('@instance');
-      }
-  };
 }
 
 function Timeline({navigation, route}) {

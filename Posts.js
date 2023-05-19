@@ -62,7 +62,7 @@ function PostContext(props) {
 
 function PostHeader(props) {
     const locale = 'en-CA';
-    const time=new Date(props.time);
+    const time= new Date(props.time);
     // const relativeTime = new RelativeTime();
 
     const timestr = time.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + time.toLocaleTimeString(locale);

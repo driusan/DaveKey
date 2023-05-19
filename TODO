@@ -1,7 +1,5 @@
 Fix Logout/Login
-Fix refresh(?)
 Show profiles
-  -- own profile
   -- Clickable profile images for other users
   -- Clickable mentions (go to profile)
 Clickable hashtags (expected behaviour?)
