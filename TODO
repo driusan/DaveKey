@@ -1,7 +1,4 @@
 Fix Logout/Login
-Show profiles
-  -- Clickable mentions (go to profile)
-      -- need to get ID using users/search-by-username-and-host, then load
 Clickable hashtags (expected behaviour?)
     - /api/notes/search-by-tag
     (or some other behaviour? /api/hashtags/users? /api/hashtags/show?) 

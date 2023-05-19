@@ -116,7 +116,7 @@ export function Post(props) {
          })}
        </View>
        ) : <View />;
-    const text = props.text ? <MFM text={props.text} emojis={props.emojis} /> : '';
+    const text = props.text ? <MFM text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
     if (props.reply) {
         return (
           <View style={styles.postContainer}>

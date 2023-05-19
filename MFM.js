@@ -1,38 +1,53 @@
 import * as mfm from 'mfm-js';
 import { StyleSheet, Text, Pressable, Image } from 'react-native';
-import React from 'react';
+import {useContext} from 'react';
+import {AccountContext} from './Account';
 import * as Linking from 'expo-linking';
 
-
-/*
-function mfm2React3(styles) {
-    return (node, i) => {
-        switch (node.type) {
-            case 'text':
-                return <Text style={styles} key={i}>{node.props.text}</Text>;
+function loadProfile(account, username, host, profileNav) {
+    if (!account) {
+        throw new Error('Invalid loadprofile call');
     }
+    console.log(username, host);
+    const url ='https://' + account.instance + '/api/users/search-by-username-and-host';
+    fetch(url,
+    {
+          method: 'POST',
+          headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+          },
+          credentials: "omit",
+          body: JSON.stringify({
+              i: account.i,
+              username: username,
+              host: host,
+          })
+    })
+    .then( (resp) => resp.json())
+    .then( (json) => {
+        if (json.length < 1) {
+            console.error('No result for profile found');
+            return;
+        }
+        profileNav(json[0].id);
+    })
+    .catch((e) => console.error(e));
 }
-*/
-function mfm2React2(_styles, emojis) {
+
+function mfm2React2(_styles, emojis, account, profileNav) {
     const MFM2React = (node, i) => {
         switch (node.type) {
             case 'text':
-            /*
-                if (node.props.text.trim() == "") {
-                    return <Text key={i} />;
-                } 
-                */
                 return <Text style={_styles} key={i}>{node.props.text}</Text>;
             case 'bold':
-                return <Text key={i} style={styles.bold}>{node.children.map(mfm2React2({..._styles, ...styles.bold}, emojis))}</Text>;
+                return <Text key={i} style={styles.bold}>{node.children.map(mfm2React2({..._styles, ...styles.bold}, emojis, account, profileNav))}</Text>;
             case 'italic':
-                return <Text key={i} style={styles.italic}>{node.children.map(mfm2React2({..._styles, ...styles.italic}), emojis)}</Text>;
+                return <Text key={i} style={styles.italic}>{node.children.map(mfm2React2({..._styles, ...styles.italic}), emojis, account, profileNav)}</Text>;
             case 'small':
-                return <Text key={i} style={styles.small}>{node.children.map(mfm2React2({...styles.small, ..._styles}, emojis))}</Text>;
+                return <Text key={i} style={styles.small}>{node.children.map(mfm2React2({...styles.small, ..._styles}, emojis, account, profileNav))}</Text>;
             case 'mention':
-                return <Pressable key={i} onPress={() => {
-                    console.log(node);
-                }}><Text key={i} style={styles.mention}>{node.props.acct}</Text></Pressable>;
+                return <Pressable key={i} onPress={() => loadProfile(account, node.props.username, node.props.host, profileNav)}><Text key={i} style={styles.mention}>{node.props.acct}</Text></Pressable>;
             case 'unicodeEmoji':
                 return <Text key={i} >{node.props.emoji}</Text>;
             case 'url':
@@ -42,10 +57,10 @@ function mfm2React2(_styles, emojis) {
             case 'hashtag':
                 return <Text key={i} style={styles.url}>#{node.props.hashtag}</Text>;
             case 'link':
-                return <Pressable key={i} onPress={() => Linking.openURL(node.props.url)}><Text>{node.children.map(mfm2React2({..._styles, ...styles.url}, emojis))}</Text></Pressable>;
+                return <Pressable key={i} onPress={() => Linking.openURL(node.props.url)}><Text>{node.children.map(mfm2React2({..._styles, ...styles.url}, emojis, account, profileNav))}</Text></Pressable>;
             case 'quote':
                 // FIXME: Style this better
-                return <Text key={i} style={styles.quote}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis))}{"\n\n"}</Text>;
+                return <Text key={i} style={styles.quote}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis, account, profileNav))}{"\n\n"}</Text>;
             case 'emojiCode':
                 for (const el of emojis) {
                     if (el.name == node.props.name) {
@@ -54,7 +69,7 @@ function mfm2React2(_styles, emojis) {
                 }
                 return <Text key={i}>:{node.props.name}:</Text>
             case 'center':
-                return <Text key={i} style={styles.center}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis))}</Text>;
+                return <Text key={i} style={styles.center}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis, account, profileNav))}</Text>;
             default:
                     console.error(node);
                     throw new Error('Unhandled MFM type: ' + node.type);
@@ -96,8 +111,9 @@ function applyMFMfunc(node, i, _styles) {
 }
 
 export default function MFM(props) {
+    const account = useContext(AccountContext);
     const mfmTree = mfm.parse(props.text);
-    const reactified = mfmTree.map(mfm2React2({}, props.emojis));
+    const reactified = mfmTree.map(mfm2React2({}, props.emojis, account, props.loadProfile));
     return <Text>{reactified}</Text>;
 }
 

@@ -134,7 +134,7 @@ function Profile(props) {
             <Birthday birthday={account.birthday} />
             <JoinedDate date={account.createdAt} />
             <View style={styles.description}>
-              <MFM text={account.description} />
+              <MFM text={account.description} loadProfile={props.onProfileClick}/>
             </View>
             <View style={styles.counts}>
               <Count name="Notes" value={account.notesCount} />

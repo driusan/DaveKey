@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Image, Button, DrawerLayoutAndroid, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
-import MFM from './MFM';
 import React, {useState,useEffect, useCallback, useContext, createContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
