@@ -6,6 +6,6 @@ Show custom emojis (1.in MFM posts 2. in reactions)
     - extract from /api/meta (emojis field)
 Touch to show thread
 CWs when applicable
-Finish MFM implementation
+Finish MFM implementation -- convert to WebView to have access to display: inline-block?
 Handle video embedded, not just images
 Render Polls

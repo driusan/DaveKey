@@ -62,12 +62,18 @@ function mfm2React2(_styles, emojis, account, profileNav) {
                 // FIXME: Style this better
                 return <Text key={i} style={styles.quote}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis, account, profileNav))}{"\n\n"}</Text>;
             case 'emojiCode':
-                for (const el of emojis) {
-                    if (el.name == node.props.name) {
-                        return <Image style={{width: 40, height: 40}} key={i} source={{uri: el.url}} />;
+                if (emojis) {
+                    for (const el of emojis) {
+                        if (el.name == node.props.name) {
+                            return <Image style={{width: 40, height: 40}} key={i} source={{uri: el.url}} />;
+                        }
                     }
                 }
                 return <Text key={i}>:{node.props.name}:</Text>
+            case 'inlineCode':
+                return <Text key={i} style={styles.inlineCode}>{node.props.code}</Text>
+            case 'blockCode':
+                return <Text key={i} style={styles.blockCode}>{"\n"}{node.props.code}{"\n"}</Text>;
             case 'center':
                 return <Text key={i} style={styles.center}>{node.children.map(mfm2React2({..._styles, ...styles.quote}, emojis, account, profileNav))}</Text>;
             default:
@@ -104,6 +110,8 @@ function applyMFMfunc(node, i, _styles) {
     case 'rainbow':
         // FIXME: Not actually handled, just prevent warnings
         return <Text key={i}>{node.children.map(mfm2React2(_styles))}</Text>;
+    case 'x2':
+        return <Text key={i} style={styles.x2}>{node.children.map(mfm2React2(_styles))}</Text>;
     default:
         console.warn('unhandled fn ' + node.props.name);
         return <Text key={i}>{node.children.map(mfm2React2(_styles))}</Text>;
@@ -135,6 +143,9 @@ const styles = StyleSheet.create({
     small: {
         fontSize: 8,
     },
+    x2: {
+        fontSize: 23, // FIXME: Figure out default font size, multiply by 2
+    },
     flipped: {
         transform: [{scaleX: -1}],
     },
@@ -154,5 +165,18 @@ const styles = StyleSheet.create({
     },
     center: {
         textAlign: 'center',
-    }
+    },
+    inlineCode: {
+        backgroundColor: '#aaa',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        borderColor: '#fff',
+    },
+    blockCode: {
+        backgroundColor: '#aaa',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        borderColor: '#000',
+
+    },
 });
