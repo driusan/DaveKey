@@ -12,7 +12,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { AccountContext, useCalckeyAccount} from './Account';
-import { MyProfile } from './Profile';
+import { MyProfile, OtherProfile } from './Profile';
 
 
 const Stack = createNativeStackNavigator();
@@ -23,11 +23,12 @@ function Article() {
 }
 
 function ActionsStack({ navigation, route }) {
-      return (
-          <Stack.Navigator screenOptions={{headerShown: false}}>
-              <Stack.Screen name="Timeline" component={Timeline} />
-          </Stack.Navigator>
-      );
+  return (
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="Timeline" component={Timeline} />
+      <Stack.Screen name="Profile" component={OtherProfile} />
+    </Stack.Navigator>
+  );
 }
 function Logout({navigation, route}) {
     const account = useContext(AccountContext);
@@ -164,7 +165,9 @@ function MainArea(props) {
       <View>
         <BoostSelect withBoosts={includeBoosts} setWithBoosts={setIncludeBoosts} />
         <PostList style={styles.flexer} posts={props.timeline.posts} withBoosts={includeBoosts}
-            loadMore={props.timeline.moreAfter} />
+            loadMore={props.timeline.moreAfter}
+            onProfileClick={props.onProfileClick}
+            />
       </View>
     );
   }
@@ -215,8 +218,14 @@ function Timeline({navigation, route}) {
   const onRefresh = useCallback(() => {
       timeline.moreBefore();
   }, [timeline, account, account.i, account.instance]);
-
-
+  const profileNavigate = (profileId) => {
+      if (!profileId) {
+          return;
+      }
+      navigation.navigate('Profile', {
+          ProfileId: profileId
+      });
+  }
 
   if (account.i == null) {
       return <GetAccessToken 
@@ -241,6 +250,7 @@ function Timeline({navigation, route}) {
    
         <MainArea style={styles.flexer}
                   timeline={timeline}
+                  onProfileClick={profileNavigate}
         />
       </ScrollView>
       <StatusBar style="auto" />

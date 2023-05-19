@@ -30,7 +30,9 @@ function mfm2React2(_styles, emojis) {
             case 'small':
                 return <Text key={i} style={styles.small}>{node.children.map(mfm2React2({...styles.small, ..._styles}, emojis))}</Text>;
             case 'mention':
-                return <Text key={i} style={styles.mention}>{node.props.acct}</Text>;
+                return <Pressable key={i} onPress={() => {
+                    console.log(node);
+                }}><Text key={i} style={styles.mention}>{node.props.acct}</Text></Pressable>;
             case 'unicodeEmoji':
                 return <Text key={i} >{node.props.emoji}</Text>;
             case 'url':

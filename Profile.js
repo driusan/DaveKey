@@ -12,6 +12,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { AccountContext} from './Account';
+import { formatUsername } from './utils';
 
 function KeyValue(props) {
     return (
@@ -57,18 +58,19 @@ function Count(props) {
     }
     return <View style={styles.countContainer}><Text style={styles.countText}>{props.name}</Text><Text style={styles.countText}>{props.value}</Text></View>;
 }
-export function MyProfile({navigation, route}) {
-    const account = useContext(AccountContext);
-    const [posts, setPosts] = useState([]);
+function Profile(props) {
+  const [posts, setPosts] = useState([]);
+  const myAccount = useContext(AccountContext);
+  const account = props.account;
 
   const loadMore = (since, until) => {
-      if (!account || !account.instance) {
+      if (!account || !myAccount.instance) {
           return;
       }
-      const url = 'https://' + account.instance + "/api/users/notes";
+      const url = 'https://' + myAccount.instance + "/api/users/notes";
       const params = {
-        i: account.i,
-        userId: account.accountInfo.id,
+        i: myAccount.i,
+        userId: account.id,
       }
 
       if (until) {
@@ -89,6 +91,7 @@ export function MyProfile({navigation, route}) {
           body: JSON.stringify(params)
       }).then(
         resp => {
+            console.log(resp.status);
             return resp.json()
         }
       ).then( (json) => {
@@ -100,11 +103,12 @@ export function MyProfile({navigation, route}) {
       });
   }
     useEffect( () => {
+        console.log('loading more');
         if (!account) {
             return;
         }
         loadMore(null, null);
-    }, [account]);
+    }, [props.account]);
     return (
       <SafeAreaView style={{flex: 1}}>
         <ScrollView style={styles.mainContainer}
@@ -112,35 +116,36 @@ export function MyProfile({navigation, route}) {
             stickyHeaderHiddenOnScroll={false}>
           <View>
             <View>
-              <Image source={{uri: account.accountInfo.bannerUrl}} style={{width: "100%", height: 200}} />
+              <Image source={{uri: account.bannerUrl}} style={{width: "100%", height: 200}} />
             </View>
             <View>
-              <Image source={{uri: account.accountInfo.avatarUrl}} style={{width: 120, height: 120, top: -100, left: 20, borderColor: 'black', borderRadius: 25, borderWidth: 1}} />
+              <Image source={{uri: account.avatarUrl}} style={{width: 120, height: 120, top: -100, left: 20, borderColor: 'black', borderRadius: 25, borderWidth: 1}} />
             </View>
           </View>
           <View style={{top: -75}}>
             <View style={styles.nameContainer}>
-              <Text style={styles.realname}>{account.accountInfo.name}</Text>
-              <Text style={styles.username}>{account.mentionName()}</Text>
+              <Text style={styles.realname}>{account.name}</Text>
+              <Text style={styles.username}>{formatUsername(account)}</Text>
             </View>
           </View>
           <View style={{top: -75}}>
-            <OnlineStatus hideOnlineStatus={account.accountInfo.hideOnlineStatus} onlineStatus={account.accountInfo.onlineStatus} />
-            <Location location={account.accountInfo.location} />
-            <Birthday birthday={account.accountInfo.birthday} />
-            <JoinedDate date={account.accountInfo.createdAt} />
+            <OnlineStatus hideOnlineStatus={account.hideOnlineStatus} onlineStatus={account.onlineStatus} />
+            <Location location={account.location} />
+            <Birthday birthday={account.birthday} />
+            <JoinedDate date={account.createdAt} />
             <View style={styles.description}>
-              <MFM text={account.accountInfo.description} />
+              <MFM text={account.description} />
             </View>
             <View style={styles.counts}>
-              <Count name="Notes" value={account.accountInfo.notesCount} />
-              <Count name="Following" value={account.accountInfo.followingCount} />
-              <Count name="Follower" value={account.accountInfo.followersCount} />
+              <Count name="Notes" value={account.notesCount} />
+              <Count name="Following" value={account.followingCount} />
+              <Count name="Follower" value={account.followersCount} />
             </View>
             <PostList 
                 style={styles.flexer}
                 posts={posts}
                 withBoosts={true}
+                onProfileClick={props.onProfileClick}
                 loadMore={() => {
                   if (posts.length > 0) {
                       loadMore(null, posts[posts.length-1].id);
@@ -155,6 +160,67 @@ export function MyProfile({navigation, route}) {
     // FIXME: With/without boosts
     // FIXME: Follow button?
     // FIXME: those extra fields that mastodon uses
+}
+export function MyProfile({navigation, route}) {
+    const account = useContext(AccountContext);
+    return <Profile account={account.accountInfo}
+               onProfileClick={(profileId) => {
+                   navigation.navigate('Home', {
+                      screen: 'Profile',
+                      params: { ProfileId: profileId }
+                   });
+               }}
+ 
+        />
+}
+export function OtherProfile({navigation, route}) {
+    const [account, setAccount] = useState(null);
+    const myAccount = useContext(AccountContext);
+    useEffect( () => {
+      if (!route.params.ProfileId) {
+          console.log('No profile id', route.params);
+
+          return;
+      }
+      const url = 'https://' + myAccount.instance + "/api/users/show";
+      const params = {
+        i: myAccount.i,
+        userId: route.params.ProfileId,
+      }
+      fetch(url,
+      {
+          method: 'POST',
+          headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+          },
+          credentials: "omit",
+          body: JSON.stringify(params)
+      }).then(
+        resp => {
+            return resp.json()
+        }
+      ).then( (json) => {
+          console.log(json);
+          setAccount(json);
+          console.log('done loading ', url, json);
+      }).catch( (e) => {
+          console.error('error loading ', url);
+          console.error(e)
+      });
+        console.log(route.params);
+    }, [route.params]);
+    if (!account) {
+        return <View />;
+    }
+
+    return <Profile account={account}
+               onProfileClick={(profileId) => {
+                   navigation.push('Profile', {
+                      ProfileId: profileId
+                   });
+               }}
+     />;
 }
 
 const styles = StyleSheet.create({

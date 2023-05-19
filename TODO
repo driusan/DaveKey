@@ -1,7 +1,7 @@
 Fix Logout/Login
 Show profiles
-  -- Clickable profile images for other users
   -- Clickable mentions (go to profile)
+      -- need to get ID using users/search-by-username-and-host, then load
 Clickable hashtags (expected behaviour?)
     - /api/notes/search-by-tag
     (or some other behaviour? /api/hashtags/users? /api/hashtags/show?) 
@@ -11,3 +11,4 @@ Touch to show thread
 CWs when applicable
 Finish MFM implementation
 Handle video embedded, not just images
+Render Polls
