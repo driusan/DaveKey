@@ -4,7 +4,8 @@ import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
 
-import RelativeTime from '@yaireo/relative-time'
+// import RelativeTime from '@yaireo/relative-time'
+
 function PostVisibility(props) {
     switch (props.visibility) {
         case 'public':

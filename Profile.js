@@ -1,16 +1,8 @@
-// import 'react-native-gesture-handler';
-
-import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import  GetAccessToken from './AccessToken';
-import { Image, Button, DrawerLayoutAndroid, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
+import { Image, StyleSheet, Text, ScrollView, View } from 'react-native';
 import MFM from './MFM';
-import React, {useState,useEffect, useCallback, useContext, createContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {useState,useEffect, useContext} from 'react';
 import { PostList } from './Posts';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { NavigationContainer } from '@react-navigation/native';
 import { AccountContext} from './Account';
 import { formatUsername } from './utils';
 
@@ -161,7 +153,7 @@ function Profile(props) {
     // FIXME: Follow button?
     // FIXME: those extra fields that mastodon uses
 }
-export function MyProfile({navigation, route}) {
+export function MyProfile({navigation}) {
     const account = useContext(AccountContext);
     return <Profile account={account.accountInfo}
                onProfileClick={(profileId) => {

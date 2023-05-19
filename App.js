@@ -3,10 +3,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
-import { Image, Button, DrawerLayoutAndroid, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
-import MFM from './MFM';
-import React, {useState,useEffect, useCallback, useContext, createContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
+import React, {useState,useEffect, useCallback, useContext} from 'react';
 import { PostList } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -18,11 +16,7 @@ import { MyProfile, OtherProfile } from './Profile';
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-function Article() {
-    return <View><Text>Timeline</Text></View>;
-}
-
-function ActionsStack({ navigation, route }) {
+function ActionsStack() {
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="Timeline" component={Timeline} />
@@ -30,7 +24,7 @@ function ActionsStack({ navigation, route }) {
     </Stack.Navigator>
   );
 }
-function Logout({navigation, route}) {
+function Logout({navigation}) {
     const account = useContext(AccountContext);
     useEffect( () => {
         if (account == null || account.i == null) {
@@ -43,7 +37,7 @@ function Logout({navigation, route}) {
     return <View><Text>Logging out..</Text></View>;
 }
 
-function ActionsDrawer(props) {
+function ActionsDrawer() {
       const account = useContext(AccountContext);
       const name = account.mentionName();
       const profileLink = name == '' ? null :
@@ -210,7 +204,7 @@ export default function App() {
     );
 }
 
-function Timeline({navigation, route}) {
+function Timeline({navigation}) {
   const [timelineType, setTimelineType] = useState('hybrid');
   const account = useContext(AccountContext);
   const timeline = useTimeline(account, timelineType);

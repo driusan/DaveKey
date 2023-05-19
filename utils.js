@@ -3,5 +3,4 @@ export function formatUsername(user) {
         return '@' + user.username + '@' + user.host;
     }
     return '@' + user.username;
-};
-
+}

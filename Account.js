@@ -1,10 +1,4 @@
-// import 'react-native-gesture-handler';
-
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import  GetAccessToken from './AccessToken';
-import { Image, Button, DrawerLayoutAndroid, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
-import React, {useState,useEffect, useCallback, useContext, createContext } from 'react';
+import {useState,useEffect, createContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const AccountContext = createContext(null);
@@ -77,42 +71,3 @@ export function useCalckeyAccount() {
       }
   };
 }
-
-const styles = StyleSheet.create({
-  container: {
-      flex: 1,
-      backgroundColor: '#faf',
-  },
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    flexFlow: 'space-between',
-    flexDirection: 'column',
-    width: '100%',
-  },
-  flexer: {
-      flex: 1,
-  },
-  timelineContainer: {
-    flexFlow: 'stretch',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    borderWidth: 1,
-    backgroundColor: '#fff',
-  },
-  timelineItem: {
-    flex: 1,
-    borderColor: 'green',
-    borderStyle: 'solid',
-    borderWidth: 1,
-  },
-  timelineText: {
-    fontSize: 20,
-    textAlign: 'center',
-  },
-  actionsContainer: {
-      flex: 1,
-      // backgroundColor: '#fff',
-  }
-
-});
