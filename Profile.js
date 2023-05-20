@@ -71,7 +71,6 @@ function Profile(props) {
       if (since) {
           params['sinceId'] = since;
       }
-      console.log(account.accountInfo, params);
       return fetch(url,
       {
           method: 'POST',
@@ -83,19 +82,15 @@ function Profile(props) {
           body: JSON.stringify(params)
       }).then(
         resp => {
-            console.log(resp.status);
             return resp.json()
         }
       ).then( (json) => {
           setPosts([...posts, ...json]);
-          console.log('done loading ', url, json);
       }).catch( (e) => {
-          console.error('error loading ', url);
           console.error(e)
       });
   }
     useEffect( () => {
-        console.log('loading more');
         if (!account) {
             return;
         }
@@ -170,8 +165,6 @@ export function OtherProfile({navigation, route}) {
     const myAccount = useContext(AccountContext);
     useEffect( () => {
       if (!route.params.ProfileId) {
-          console.log('No profile id', route.params);
-
           return;
       }
       const url = 'https://' + myAccount.instance + "/api/users/show";
@@ -193,14 +186,11 @@ export function OtherProfile({navigation, route}) {
             return resp.json()
         }
       ).then( (json) => {
-          console.log(json);
           setAccount(json);
-          console.log('done loading ', url, json);
       }).catch( (e) => {
           console.error('error loading ', url);
           console.error(e)
       });
-        console.log(route.params);
     }, [route.params]);
     if (!account) {
         return <View />;

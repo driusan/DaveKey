@@ -8,7 +8,6 @@ function loadProfile(account, username, host, profileNav) {
     if (!account) {
         throw new Error('Invalid loadprofile call');
     }
-    console.log(username, host);
     const url ='https://' + account.instance + '/api/users/search-by-username-and-host';
     fetch(url,
     {
@@ -91,7 +90,6 @@ function applyMFMfunc(node, i, _styles) {
     let newstyles;
     switch (node.props.name) {
     case 'flip':
-        console.log(node);
         // FIXME: This should be the equivalent of inline-block.
         if (!node.props.args ||
             Object.keys(node.props.args).length === 0

@@ -1,8 +1,11 @@
 import MFM from './MFM';
-import { StyleSheet, Pressable, Text, View, Image, Button } from 'react-native';
+import { useContext, StyleSheet, Pressable, Text, View, Image, Button } from 'react-native';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
+import { useNavigation } from '@react-navigation/native';
+
+
 
 // import RelativeTime from '@yaireo/relative-time'
 
@@ -20,17 +23,16 @@ function PostVisibility(props) {
         throw new Error('Unhandled visibility: ' + props.visibility);
     }
 }
-function PostAuthor(props) {
+export function PostAuthor(props) {
     return (
-         <View style={{flexDirection: 'row', padding: 5, flex: 1}}>
            <Pressable onPress={() => {
-               console.log(props.user);
                if (props.onProfileClick) {
                    props.onProfileClick(props.user.id);
                } else {
                    console.error('No onProfileClick defined');
                }
            }}>
+         <View style={{flexDirection: 'row', padding: 5, flex: 1}}>
                <View style={{paddingRight: 5}}>
                  <Image style={{width: 40, height: 40}}
                    source={{ uri: props.user.avatarUrl}}
@@ -40,8 +42,8 @@ function PostAuthor(props) {
                  <Text>{props.user.name}</Text>
                  <Text>{formatUsername(props.user)}</Text>
                </View>
-           </Pressable>
          </View>
+           </Pressable>
     );
 }
 
@@ -50,14 +52,15 @@ function PostContext(props) {
     return <View />;
   }
 
-  const author = <PostAuthor user={props.context.user} onProfileClick={props.onProfileClick}/>;
   return (
     <View style={{flex: 1}}>
       <Post uri={props.context.uri}
         text={props.context.text} 
         time={props.context.createdAt}
-        author={author}
+        author={props.context.user}
         content={props.context}
+        noteid={props.context.id}
+        onProfileClick={props.onProfileClick}
         visibility={props.context.visibility}
       />
     </View>
@@ -76,7 +79,9 @@ function PostHeader(props) {
     return (
       <View style={styles.postMetaContainer}>
         <View style={{flexDirection: 'row'}}>
-          {props.author}
+          <PostAuthor user={props.author}
+                      onProfileClick={props.onProfileClick} 
+           />
           <PostVisibility visibility={props.visibility} />
         </View>
         <Text style={styles.postTime}>{timestr}</Text>
@@ -84,6 +89,7 @@ function PostHeader(props) {
     );
 }
 export function Post(props) {
+    const navigation = useNavigation();
     // FIXME: Come up with a more robust regex
     const urlRE = /https?:\/\/[\w./\-?+]+/g;
     const thetext = props.text || ''
@@ -118,26 +124,35 @@ export function Post(props) {
        </View>
        ) : <View />;
     const text = props.text ? <MFM text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
+    const loadThread = () => {
+        if (navigation && navigation.push) {
+            navigation.push("Thread", { PostId: props.noteid});
+        }
+    }
     if (props.reply) {
         return (
           <View style={styles.postContainer}>
             <Text>{props.replyLabel || 'In reply to:'}</Text>
-            <PostContext context={props.reply} onProfileClick={props.onProfileClick}/>
-            <PostHeader author={props.author}
-                visibility={props.visibility}
-                time={props.time}
-            />
-            {text}
-            {images}
-            {previews}
-            {reactions}
+            <PostContext context={props.reply} onProfileClick={props.onProfileClick} />
+            <Pressable onPress={loadThread}>
+                <PostHeader author={props.author}
+                    visibility={props.visibility}
+                    time={props.time}
+                />
+                {text}
+                {images}
+                {previews}
+                {reactions}
+            </Pressable>
           </View>
        );
     } else {
         return (
+         <Pressable onPress={loadThread}>
           <View style={styles.postContainer}>
             <PostHeader author={props.author}
                 visibility={props.visibility}
+                onProfileClick={props.onProfileClick}
                 time={props.time}
             />
             {text}
@@ -145,6 +160,7 @@ export function Post(props) {
             {previews}
             {reactions}
           </View>
+         </Pressable>
        );
     }
 }
@@ -159,15 +175,13 @@ export function PostList(props) {
           // FIXME: Move this logic into <Post />?
         if (p.text && p.renote) {
             // QT
-            const author = <PostAuthor user={p.user}
-                              onProfileClick={props.onProfileClick} 
-                           />;
             return <Post key={i}
                         uri={p.uri}
+                        noteid={p.id}
                         text={p.text} 
                         time={p.createdAt}
                         content={p}
-                        author={author}
+                        author={p.user}
                         visibility={p.visibility}
                         reply={p.renote}
                         replyLabel={'RE:'}
@@ -176,16 +190,14 @@ export function PostList(props) {
                     />;
         } else if (p.text && !p.renote) {
             // Plain post
-            const author = <PostAuthor user={p.user}
-                              onProfileClick={props.onProfileClick} 
-                           />;
             return <Post 
                 key={i}
                 uri={p.uri}
+                noteid={p.id}
                 text={p.text} 
                 time={p.createdAt}
                 content={p}
-                author={author}
+                author={p.user}
                 visibility={p.visibility}
                 reply={p.reply}
                 emojis={p.emojis}
@@ -193,9 +205,6 @@ export function PostList(props) {
             />;
         } else if (!p.text && p.renote) {
             // boost
-            const author = <PostAuthor user={p.renote.user}
-                              onProfileClick={props.onProfileClick} 
-                           />;
             return (
               <View key={i}
                     style={styles.postContainer}>
@@ -214,8 +223,9 @@ export function PostList(props) {
                     key={i}
                     uri={p.uri}
                     text={p.renote.text} 
+                    noteid={p.renote.id}
                     time={p.createdAt}
-                    author={author}
+                    author={p.renote.user}
                     content={p}
                     visibility={p.renote.visibility}
                     emojis={p.emojis}
@@ -226,15 +236,13 @@ export function PostList(props) {
         } else { // !text !renote.. nothing?
             if (p.files) {
                 // no text, but had file or image attached. Treat it as a post
-                const author = <PostAuthor user={p.renote.user}
-                                  onProfileClick={props.onProfileClick} 
-                               />;
                 return <Post key={i}
                     uri={p.uri}
                     text={p.text} 
                     time={p.createdAt}
+                    noteid={p.id}
                     content={p}
-                    author={author}
+                    author={p.user}
                     visibility={p.visibility}
                     reply={p.reply}
                     emojis={p.emojis}

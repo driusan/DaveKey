@@ -11,6 +11,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { AccountContext, useCalckeyAccount} from './Account';
 import { MyProfile, OtherProfile } from './Profile';
+import {Thread} from './Thread';
 
 
 const Stack = createNativeStackNavigator();
@@ -21,6 +22,7 @@ function ActionsStack() {
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="Timeline" component={Timeline} />
       <Stack.Screen name="Profile" component={OtherProfile} />
+      <Stack.Screen name="Thread" component={Thread} />
     </Stack.Navigator>
   );
 }
@@ -62,18 +64,15 @@ function useTimeline(account, type) {
           return;
       }
       const url = 'https://' + account.instance + "/api/notes/" + type + "-timeline";
-      //console.log('loading ', url, ' for load ', refreshNo);
       const params = {
         i: account.i,
       }
-      //console.log('until is', until);
       if (until) {
           params['untilId'] = until;
       }
       if (since) {
           params['sinceId'] = since;
       }
-      //console.log(params);
       return fetch(url,
       {
           method: 'POST',
@@ -103,7 +102,6 @@ function useTimeline(account, type) {
           }
 
           setRefreshing(false);
-          console.log('done loading ', refreshNo, since, until);
       }).catch( (e) => {
           setRefreshing(false);
           console.error('error loading ', refreshNo);

@@ -45,8 +45,6 @@ export function useCalckeyAccount() {
           console.error(e)
       });
   }, [instance, accessToken]);
-
-
   return {
       i: accessToken,
       instance: instance,
@@ -58,8 +56,8 @@ export function useCalckeyAccount() {
           return '@' + accountInfo.username + '@' + instance;
       },
       login: (i, instance) => {
-          setAccessToken(i);
           setInstance(instance);
+          setAccessToken(i);
           AsyncStorage.setItem('@i', i);
           AsyncStorage.setItem('@instance', instance);
       },
@@ -68,6 +66,34 @@ export function useCalckeyAccount() {
           setInstance('');
           AsyncStorage.removeItem('@i');
           AsyncStorage.removeItem('@instance');
-      }
+      },
+      api: (endpoint, params) => {
+        if (!instance) {
+            return new Promise( () => {});
+            throw new Error('No instance');
+        }
+        const url = 'https://' + instance + '/api/' + endpoint;
+        const newParams = {
+            i: accessToken, 
+            ...params,
+        };
+        console.log('api', url, params);
+        return fetch(url, {
+          method: 'POST',
+          headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+          },
+          credentials: "omit",
+          body: JSON.stringify(newParams)
+        }).then(
+            (resp) => {
+                if (!resp.ok) {
+                    throw new Error('Received status code ' + resp.status + ' for ' + endpoint);
+                }
+                return resp.json();
+            }
+        );
+    }
   };
 }

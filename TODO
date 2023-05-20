@@ -1,10 +1,9 @@
 Fix Logout/Login
+Improve styling of threads
 Clickable hashtags (expected behaviour?)
     - /api/notes/search-by-tag
     (or some other behaviour? /api/hashtags/users? /api/hashtags/show?) 
-Show custom emojis (1.in MFM posts 2. in reactions)
-    - extract from /api/meta (emojis field)
-Touch to show thread
+Show custom emojis in reactions
 CWs when applicable
 Finish MFM implementation -- convert to WebView to have access to display: inline-block?
 Handle video embedded, not just images
