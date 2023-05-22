@@ -12,6 +12,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AccountContext, useCalckeyAccount} from './Account';
 import { MyProfile, OtherProfile } from './Profile';
 import {Thread} from './Thread';
+import { MenuProvider} from 'react-native-popup-menu';
 
 
 const Stack = createNativeStackNavigator();
@@ -159,6 +160,7 @@ function MainArea(props) {
         <PostList style={styles.flexer} posts={props.timeline.posts} withBoosts={includeBoosts}
             loadMore={props.timeline.moreAfter}
             onProfileClick={props.onProfileClick}
+            myAccount={props.myAccount}
             />
       </View>
     );
@@ -194,10 +196,13 @@ export default function App() {
     const account = useCalckeyAccount();
 
     return (
+
       <AccountContext.Provider value={account}>
+      <MenuProvider style={{flex: 1}}>
         <NavigationContainer>
           <ActionsDrawer account={account}/>
         </NavigationContainer>
+      </MenuProvider>
       </AccountContext.Provider>
     );
 }

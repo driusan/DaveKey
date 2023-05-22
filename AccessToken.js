@@ -20,7 +20,6 @@ function GetAccessToken(props) {
       if (!instance || instanceSelected) {
           return;
       }
-      console.log('Fetching');
       // get the app secret
       fetch('https://' + instance + "/api/app/create",
       {

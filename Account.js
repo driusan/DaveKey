@@ -8,9 +8,17 @@ export function useCalckeyAccount() {
   const [instance, setInstance] = useState('');
   const [accountInfo, setAccountInfo] = useState(null);
   useEffect(() => {
-      // Use stored account on first login.
-      AsyncStorage.getItem('@i').then(setAccessToken);
-      AsyncStorage.getItem('@instance').then(setInstance);
+      AsyncStorage.multiGet(['@i', '@instance']).then(
+        (vals) => {
+            for(const obj of vals) {
+                const [key, val] = obj;
+                switch (key) {
+                    case '@instance': setInstance(val); break;
+                    case '@i': setAccessToken(val); break;
+                }
+            }
+        }
+      );
   }, []);
   useEffect(() => {
       // Fetch profile info after login
@@ -39,7 +47,7 @@ export function useCalckeyAccount() {
               throw new Error(json);
           }
           setAccountInfo(json);
-          console.log('Loaded', url, json)
+          console.log('Loaded', url);
       }).catch( (e) => {
           console.error('error loading ', url);
           console.error(e)

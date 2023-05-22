@@ -1,10 +1,14 @@
 import MFM from './MFM';
-import { useContext, StyleSheet, Pressable, Text, View, Image, Button } from 'react-native';
+import { StyleSheet, Pressable, Text, View, Image, Button } from 'react-native';
+import { useContext } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
 import { useNavigation } from '@react-navigation/native';
-
+import { Entypo } from "@expo/vector-icons";
+import { MenuProvider, MenuOptions, MenuOption, Menu, MenuTrigger} from 'react-native-popup-menu';
+import * as Linking from 'expo-linking';
+import { AccountContext} from './Account';
 
 
 // import RelativeTime from '@yaireo/relative-time'
@@ -67,6 +71,26 @@ function PostContext(props) {
   );
 }
 
+function PostMenu(props) {
+    const account = useContext(AccountContext);
+    const options = [];
+    if (account && props.PostId) {
+        options.push(<MenuOption key="open" onSelect={() => Linking.openURL('https://' + account.instance + '/notes/' + props.PostId)} text="Open in browser" />);
+    }
+    if (props.OriginalURL) {
+        options.push(<MenuOption key="openorig" onSelect={() => {
+                Linking.openURL(props.OriginalURL)
+            }} text="Open original in browser" />);
+    }
+    return (
+        <Menu style={{flex: 1}}>
+          <MenuTrigger style={{flex: 1, alignSelf: 'flex-end'}}>
+            <Entypo name="dots-three-vertical" size={24} color="black" />
+          </MenuTrigger>
+          <MenuOptions>{options}</MenuOptions>
+        </Menu>
+      );
+}
 function PostHeader(props) {
     const locale = 'en-CA';
     const time= new Date(props.time);
@@ -83,6 +107,7 @@ function PostHeader(props) {
                       onProfileClick={props.onProfileClick} 
            />
           <PostVisibility visibility={props.visibility} />
+          <PostMenu PostId={props.content.id} OriginalURL={props.content.url || props.content.uri} myAccount={props.myAccount}/>
         </View>
         <Text style={styles.postTime}>{timestr}</Text>
       </View>
@@ -138,6 +163,8 @@ export function Post(props) {
                 <PostHeader author={props.author}
                     visibility={props.visibility}
                     time={props.time}
+                    content={props.content}
+                    myAccount={props.myAccount}
                 />
                 {text}
                 {images}
@@ -153,7 +180,9 @@ export function Post(props) {
             <PostHeader author={props.author}
                 visibility={props.visibility}
                 onProfileClick={props.onProfileClick}
+                content={props.content}
                 time={props.time}
+                myAccount={props.myAccount}
             />
             {text}
             {images}
@@ -187,6 +216,7 @@ export function PostList(props) {
                         replyLabel={'RE:'}
                         emojis={p.emojis}
                         onProfileClick={props.onProfileClick} 
+                        myAccount={props.myAccount}
                     />;
         } else if (p.text && !p.renote) {
             // Plain post
@@ -202,6 +232,7 @@ export function PostList(props) {
                 reply={p.reply}
                 emojis={p.emojis}
                 onProfileClick={props.onProfileClick} 
+                myAccount={props.myAccount}
             />;
         } else if (!p.text && p.renote) {
             // boost
@@ -226,10 +257,11 @@ export function PostList(props) {
                     noteid={p.renote.id}
                     time={p.createdAt}
                     author={p.renote.user}
-                    content={p}
+                    content={p.renote}
                     visibility={p.renote.visibility}
                     emojis={p.emojis}
                     onProfileClick={props.onProfileClick} 
+                    myAccount={props.myAccount}
                 />
               </View>
            );
@@ -247,6 +279,7 @@ export function PostList(props) {
                     reply={p.reply}
                     emojis={p.emojis}
                     onProfileClick={props.onProfileClick} 
+                    myAccount={props.myAccount}
                 />;
             }
             console.warn(p);
