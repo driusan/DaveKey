@@ -78,7 +78,7 @@ export function useCalckeyAccount() {
       api: (endpoint, params) => {
         if (!instance) {
             return new Promise( () => {});
-            throw new Error('No instance');
+            // throw new Error('No instance');
         }
         const url = 'https://' + instance + '/api/' + endpoint;
         const newParams = {

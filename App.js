@@ -3,9 +3,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
-import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
+import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
 import {useState,useEffect, useCallback, useContext} from 'react';
-import { FlatListPost, Post } from './Posts';
+import { FlatListPost } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
@@ -151,23 +151,6 @@ function BoostSelect(props) {
    );
 }
 
-function MainArea(props) {
-  const [includeBoosts, setIncludeBoosts] = useState(true);
-  if (props.timeline.posts) {
-    return (
-      <View>
-        <BoostSelect withBoosts={includeBoosts} setWithBoosts={setIncludeBoosts} />
-        <PostList style={styles.flexer} posts={props.timeline.posts} withBoosts={includeBoosts}
-            loadMore={props.timeline.moreAfter}
-            onProfileClick={props.onProfileClick}
-            myAccount={props.myAccount}
-            />
-      </View>
-    );
-  }
-  return <Text>Loading {props.instance}..</Text>;
-}
-
 function TimelineSelect(props) {
     // global, home, hybrid, recommended
     const icon = (display, icon, active) => {
@@ -233,9 +216,6 @@ function Timeline({navigation}) {
       />;
   }
   let refreshControl = <RefreshControl refreshing={timeline.isRefreshing} onRefresh={onRefresh} enabled={true}/>;
-  const moreButton = () => {
-        return <Button title="Load more" onPress={timeline.moreAfter} />;
-  };
   return (
     <SafeAreaView style={{flex: 1}}>
         <FlatList
@@ -257,7 +237,8 @@ function Timeline({navigation}) {
            stickyHeaderIndices={[0]}
            stickyHeaderHiddenOnScroll={true}
         />
-     </SafeAreaView>
+     <StatusBar style="auto" />
+    </SafeAreaView>
   );
 /*
 return (
@@ -272,7 +253,6 @@ return (
               timeline={timeline}
     />
   </ScrollView>
-  <StatusBar style="auto" />
 </SafeAreaView>
 );
 */

@@ -1,8 +1,8 @@
-import { Text, ScrollView, View, FlatList } from 'react-native';
+import { Text, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCalckeyAccount } from './Account';
 import { useEffect, useState } from 'react';
-import { Post, PostList } from './Posts';
+import { Post } from './Posts';
 
 export function Thread({navigation, route}) {
     const account = useCalckeyAccount();
@@ -62,7 +62,8 @@ export function RenderThread(props) {
 }
 
 function ConversationContext(props) {
-    return <View style={{flex: 1}}>
+    return (
+      <View style={{flex: 1}}>
         {props.posts.map((post, i) => {
           return <Post uri={post.uri}
             key={i}
@@ -74,5 +75,6 @@ function ConversationContext(props) {
             visibility={post.visibility}
           />
         })}
-        </View>;
+      </View>
+      );
 }

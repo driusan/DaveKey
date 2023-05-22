@@ -6,7 +6,7 @@ import 'date-time-format-timezone';
 import { formatUsername } from './utils';
 import { useNavigation } from '@react-navigation/native';
 import { Entypo } from "@expo/vector-icons";
-import { MenuProvider, MenuOptions, MenuOption, Menu, MenuTrigger} from 'react-native-popup-menu';
+import { MenuOptions, MenuOption, Menu, MenuTrigger} from 'react-native-popup-menu';
 import * as Linking from 'expo-linking';
 import { AccountContext} from './Account';
 
