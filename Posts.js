@@ -163,8 +163,8 @@ export function Post(props) {
                 <PostHeader author={props.author}
                     visibility={props.visibility}
                     time={props.time}
+                    onProfileClick={props.onProfileClick}
                     content={props.content}
-                    myAccount={props.myAccount}
                 />
                 {text}
                 {images}
@@ -289,6 +289,86 @@ export function PostList(props) {
       <Button title="Load more" onPress={props.loadMore} />
       </View>
     );
+}
+
+export function FlatListPost(props) {
+    const p = props.post;
+    if (p.text && p.renote) {
+        // QT
+        return <Post
+                        uri={p.uri}
+                        noteid={p.id}
+                        text={p.text} 
+                        time={p.createdAt}
+                        content={p}
+                        author={p.user}
+                        visibility={p.visibility}
+                        reply={p.renote}
+                        replyLabel={'RE:'}
+                        emojis={p.emojis}
+                        onProfileClick={props.onProfileClick} 
+                    />;
+        } else if (p.text && !p.renote) {
+            // Plain post
+            return <Post 
+                uri={p.uri}
+                noteid={p.id}
+                text={p.text} 
+                time={p.createdAt}
+                content={p}
+                author={p.user}
+                visibility={p.visibility}
+                reply={p.reply}
+                emojis={p.emojis}
+                onProfileClick={props.onProfileClick} 
+            />;
+        } else if (!p.text && p.renote) {
+            // boost
+            return (
+              <View style={styles.postContainer}>
+                <View style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      justifyContent: 'flex-start',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                }}>
+                  <Text>Boosted by </Text>
+                  <PostAuthor user={p.user} onProfileClick={props.onProfileClick}/>
+                  <PostVisibility visibility={p.visibility} />
+                </View>
+                <Post uri={p.uri}
+                    text={p.renote.text} 
+                    noteid={p.renote.id}
+                    time={p.createdAt}
+                    author={p.renote.user}
+                    content={p.renote}
+                    visibility={p.renote.visibility}
+                    emojis={p.emojis}
+                    onProfileClick={props.onProfileClick} 
+                    myAccount={props.myAccount}
+                />
+              </View>
+           );
+        } else { // !text !renote.. nothing?
+            if (p.files) {
+                // no text, but had file or image attached. Treat it as a post
+                return <Post uri={p.uri}
+                    text={p.text} 
+                    time={p.createdAt}
+                    noteid={p.id}
+                    content={p}
+                    author={p.user}
+                    visibility={p.visibility}
+                    reply={p.reply}
+                    emojis={p.emojis}
+                    onProfileClick={props.onProfileClick} 
+                    myAccount={props.myAccount}
+                />;
+            }
+            console.warn(p);
+            throw new Error('Unhandled post. No text and no renote.');
+        }
 }
 
 const styles = StyleSheet.create({

@@ -3,9 +3,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
-import { RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
-import React, {useState,useEffect, useCallback, useContext} from 'react';
-import { PostList } from './Posts';
+import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, ScrollView, View } from 'react-native';
+import {useState,useEffect, useCallback, useContext} from 'react';
+import { FlatListPost, Post } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
@@ -211,6 +211,7 @@ function Timeline({navigation}) {
   const [timelineType, setTimelineType] = useState('hybrid');
   const account = useContext(AccountContext);
   const timeline = useTimeline(account, timelineType);
+  const [includeBoosts, setIncludeBoosts] = useState(true);
 
   const onRefresh = useCallback(() => {
       timeline.moreBefore();
@@ -232,64 +233,86 @@ function Timeline({navigation}) {
       />;
   }
   let refreshControl = <RefreshControl refreshing={timeline.isRefreshing} onRefresh={onRefresh} enabled={true}/>;
-
+  const moreButton = () => {
+        return <Button title="Load more" onPress={timeline.moreAfter} />;
+  };
   return (
     <SafeAreaView style={{flex: 1}}>
-      <ScrollView style={styles.mainContainer}
-                  refreshControl={refreshControl}
-                  stickyHeaderIndices={[0]}
-                  stickyHeaderHiddenOnScroll={true}
-                   >
-         <TimelineSelect
-            onChange={setTimelineType}
-            active={timelineType}
-         />
-   
-        <MainArea style={styles.flexer}
-                  timeline={timeline}
-                  onProfileClick={profileNavigate}
+        <FlatList
+           data={timeline.posts}
+           renderItem={({item}) => <FlatListPost post={item} 
+              onProfileClick={profileNavigate}
+           />}
+           ListHeaderComponent={
+             <View>
+               <TimelineSelect
+                  onChange={setTimelineType}
+                  active={timelineType}
+                />
+                <BoostSelect withBoosts={includeBoosts} setWithBoosts={setIncludeBoosts} />
+             </View>
+           }
+           ListFooterComponent={<Button title="Load more" onPress={timeline.moreAfter} />}
+           refreshControl={refreshControl}
+           stickyHeaderIndices={[0]}
+           stickyHeaderHiddenOnScroll={true}
         />
-      </ScrollView>
-      <StatusBar style="auto" />
-    </SafeAreaView>
+     </SafeAreaView>
   );
+/*
+return (
+<SafeAreaView style={{flex: 1}}>
+  <ScrollView style={styles.mainContainer}
+              refreshControl={refreshControl}
+              stickyHeaderIndices={[0]}
+              stickyHeaderHiddenOnScroll={true}
+               >
+
+    <MainArea style={styles.flexer}
+              timeline={timeline}
+    />
+  </ScrollView>
+  <StatusBar style="auto" />
+</SafeAreaView>
+);
+*/
 }
 
 const styles = StyleSheet.create({
-  container: {
-      flex: 1,
-      backgroundColor: '#faf',
-  },
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    flexFlow: 'space-between',
-    flexDirection: 'column',
-    width: '100%',
-  },
-  flexer: {
-      flex: 1,
-  },
-  timelineContainer: {
-    flexFlow: 'stretch',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    borderWidth: 1,
-    backgroundColor: '#fff',
-  },
-  timelineItem: {
-    flex: 1,
-    borderColor: 'green',
-    borderStyle: 'solid',
-    borderWidth: 1,
-  },
-  timelineText: {
-    fontSize: 20,
-    textAlign: 'center',
-  },
-  actionsContainer: {
-      flex: 1,
-      // backgroundColor: '#fff',
-  }
+container: {
+  flex: 1,
+  backgroundColor: '#faf',
+},
+mainContainer: {
+flex: 1,
+backgroundColor: '#fff',
+flexFlow: 'space-between',
+flexDirection: 'column',
+width: '100%',
+},
+flexer: {
+  flex: 1,
+},
+timelineContainer: {
+flexFlow: 'stretch',
+flexDirection: 'row',
+justifyContent: 'center',
+borderWidth: 1,
+backgroundColor: '#fff',
+},
+timelineItem: {
+flex: 1,
+borderColor: 'green',
+borderStyle: 'solid',
+borderWidth: 1,
+},
+timelineText: {
+fontSize: 20,
+textAlign: 'center',
+},
+actionsContainer: {
+  flex: 1,
+  // backgroundColor: '#fff',
+}
 
 });
