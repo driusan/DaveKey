@@ -10,7 +10,7 @@ Finish MFM implementation -- convert to WebView to have access to display: inlin
 Handle video embedded, not just images
 Render Polls
 Notifications
-    - separate unread from read
+    - separate unread from read (bold text?)
     - style notifications page properly
     - actions (reply/like) in notification
 Antennas

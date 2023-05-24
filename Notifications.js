@@ -28,7 +28,7 @@ TaskManager.defineTask(NOTIFICATION_TASK, async () => {
     try {
       const notifs = await getNotificationsBackground();
       if (notifs.length == 0) {
-        // console.log('No new notifications');
+        console.log('No new notifications');
         return BackgroundFetch.BackgroundFetchResult.NoData;
       }
       for(obj of notifs) {
@@ -104,7 +104,7 @@ export function useNotifications() {
       });
       // console.log('Registering task');
       BackgroundFetch.registerTaskAsync(NOTIFICATION_TASK, {
-        minimumInterval: 10*60, // 10 minutes
+        minimumInterval: 1*60, // 1 minute
         stopOnTerminate: false,
         startOnBoot: true,
         });
@@ -130,51 +130,66 @@ function scheduleNotification(obj) {
           url: "calckey://notes/" + obj.note.id,
         }
       },
-    trigger: null,
-  });
-  break;
+      trigger: null,
+    });
+    break;
   case 'followRequestAccepted':
-                    Notifications.scheduleNotificationAsync({
-                        content: {
-                            title: formatUsername(obj.user) + ' follow request accepted',
-                            data: {
-                                notificationId: obj.id,
-                                url: "calckey://profiles/" + obj.user.id,
-                            }
-                        },
-                        trigger: null,
-                    });
-                    break;
-                case 'reply':
-                    Notifications.scheduleNotificationAsync({
-                        content: {
-                            title: 'Reply from ' + formatUsername(obj.user),
-                            body: obj.note.text,
-                            data: {
-                                notificationId: obj.id,
-                                noteId: obj.note.id,
-                                url: "calckey://notes/" + obj.note.id,
-                            }
-                        },
-                        trigger: null,
-                    });
-                    break;
-                case 'follow':
-                    Notifications.scheduleNotificationAsync({
-                        content: {
-                            title: 'Followed by ' + formatUsername(obj.user),
-                            data: {
-                                notificationId: obj.id,
-                                url: "calckey://profiles/" + obj.user.id,
-                            }
-                        },
-                        trigger: null,
-                    });
-                    break;
-                default:
-                    console.log(obj.type);
-                }
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: formatUsername(obj.user) + ' follow request accepted',
+        data: {
+          notificationId: obj.id,
+          url: "calckey://profiles/" + obj.user.id,
+        }
+      },
+      trigger: null,
+    });
+    break;
+  case 'reply':
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Reply from ' + formatUsername(obj.user),
+        body: obj.note.text,
+        data: {
+          notificationId: obj.id,
+          noteId: obj.note.id,
+          url: "calckey://notes/" + obj.note.id,
+        }
+      },
+      trigger: null,
+    });
+    break;
+  case 'follow':
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Followed by ' + formatUsername(obj.user),
+        data: {
+          notificationId: obj.id,
+          url: "calckey://profiles/" + obj.user.id,
+        }
+      },
+      trigger: null,
+    });
+    break;
+  case 'mention':
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Mentioned by by ' + formatUsername(obj.user),
+        body: obj.note.text,
+        data: {
+          notificationId: obj.id,
+          noteId: obj.note.id,
+          url: "calckey://notes/" + obj.user.id,
+        }
+      },
+      trigger: null,
+    });
+    break;
+  default:
+    console.log(obj.type);
+  }
 }
+
 export function NotificationsPage() {
     const api = useAPI();
     const [notifications, setNotifications] = useState([]);
@@ -188,12 +203,14 @@ export function NotificationsPage() {
             //console.log('got', json);
             // FIXME: Other notification types
             // FIXME: Make background task
+            /*
             for (obj of json) {
                 if (obj.isRead) {
                     continue;
                 }
                 scheduleNotification(obj);
             }
+            */
             setNotifications(json);
         }).catch((e) => {
             console.error(e);
@@ -203,8 +220,8 @@ export function NotificationsPage() {
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
-          checkStatusAsync();
-          }, []);
+    checkStatusAsync();
+  }, []);
 
   const checkStatusAsync = async () => {
       const status = await BackgroundFetch.getStatusAsync();
@@ -212,9 +229,10 @@ export function NotificationsPage() {
       setStatus(status);
       setIsRegistered(isRegistered);
   };
+  console.log('notifs', notifications);
     return (
       <SafeAreaView style={{flex: 1}}>
-        <View><Text>Status: {status} Registered: {isRegistered ? 'true' : 'false'}</Text></View>
+        <View><Text>Notification Status: {status} Registered: {isRegistered ? 'true' : 'false'}</Text></View>
         <FlatList style={{flex: 1}} data={notifications}
           ItemSeparatorComponent={(e) => <View style={{borderBottomWidth: 2, borderColor: 'black', borderStyle: 'dotted', margin: 2}} />}
 
@@ -242,6 +260,15 @@ function Notification(props) {
         return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
     case 'follow':
         return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Followed by </Text><PostAuthor user={props.notification.user} /></View>;
+    case 'mention':
+        return (
+          <View style={{flexDirection: 'column'}}>
+            <View style={{flexDirection: 'row', textAlign: 'center'}}>
+              <Text>Mentioned by </Text><PostAuthor user={props.notification.user} />
+            </View>
+            <FlatListPost post={props.notification.note} noBorder={true}/>
+          </View>
+        );
     default:
         return <View><Text>Unhandled notification type {props.notification.type}</Text></View>;
     }

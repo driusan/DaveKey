@@ -268,25 +268,9 @@ function Timeline({navigation}) {
            stickyHeaderIndices={[0]}
            stickyHeaderHiddenOnScroll={true}
         />
-     <StatusBar style="auto" />
+     <StatusBar style="dark" />
     </SafeAreaView>
   );
-/*
-return (
-<SafeAreaView style={{flex: 1}}>
-  <ScrollView style={styles.mainContainer}
-              refreshControl={refreshControl}
-              stickyHeaderIndices={[0]}
-              stickyHeaderHiddenOnScroll={true}
-               >
-
-    <MainArea style={styles.flexer}
-              timeline={timeline}
-    />
-  </ScrollView>
-</SafeAreaView>
-);
-*/
 }
 
 const styles = StyleSheet.create({

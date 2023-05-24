@@ -1,8 +1,11 @@
 import * as mfm from 'mfm-js';
-import { StyleSheet, Text, Pressable, Image } from 'react-native';
+import { StyleSheet, View, Text, Pressable, Image } from 'react-native';
 import {useContext} from 'react';
 import {AccountContext} from './Account';
 import * as Linking from 'expo-linking';
+// import { WebView } from 'react-native-webview';
+import AutoHeightWebView from 'react-native-autoheight-webview'
+
 
 function loadProfile(account, username, host, profileNav) {
     if (!account) {
@@ -116,10 +119,90 @@ function applyMFMfunc(node, i, _styles) {
     }
 }
 
+function MFM2HTML(mfmTree, emojis) {
+    const node2HTML = (node) => {
+        const children = node.children ? node.children.map(node2HTML) : '';
+        switch(node.type) {
+        case 'text':
+          return "<span>" + node.props.text.replaceAll("\n", "<br />") + "</span>";
+        case 'url': 
+          return "<a href=\"#\" onclick=\"window.ReactNativeWebView.postMessage(JSON.stringify({type: 'openurl', url: '" + node.props.url + "'})); return false;\">" + node.props.url + "</a>";
+        case 'link': 
+          return "<a href=\"#\" onclick=\"window.ReactNativeWebView.postMessage(JSON.stringify({type: 'openurl', url: '" + node.props.url + "'})); return false;\">" + children + "</a>";
+        case 'mention':
+          return "<a href=\"#\" onclick=\"window.ReactNativeWebView.postMessage(JSON.stringify({type: 'openprofile', username: '" + node.props.username + "', host: '" + node.props.host + "'})); return false;\">" + node.props.acct + "</a>";
+        case 'unicodeEmoji': return node.props.emoji;
+        case 'hashtag': return '#' + node.props.hashtag;
+        case 'bold':
+           return "<b>" + children + "</b>";
+        case 'italic':
+           return "<i>" + children + "</i>";
+        case 'small':
+           return "<small>" + children + "</small>";
+        case 'quote':
+           return "<blockquote>" + children + "</blockquote>";
+        case 'emojiCode':
+          if (emojis) {
+            for (const el of emojis) {
+              if (el.name == node.props.name) {
+                return "<img src=\"" + el.url + "\" width=40 height=40 />";
+              }
+            }
+          }
+          return "<span>:" + node.props.name + ":</span>";
+        case 'inlineCode':
+          return "<code>" + children + "</code>";
+        case 'blockCode':
+          return "<code style=\"white-space: pre; display: block;\">" + children + "</code>";
+        case 'center':
+          return "<center>" + children + "</center>";
+        default:
+            console.warn(node.type + ' not implemented');
+            return '<div>' + node.type + ' Not Implemented</div>'
+        }
+    }
+    const nodesAsHTML = mfmTree.map(node2HTML);
+    return '<div>' + nodesAsHTML.join('') + '</div>';
+}
 export default function MFM(props) {
     const account = useContext(AccountContext);
     const mfmTree = mfm.parse(props.text);
     const reactified = mfmTree.map(mfm2React2({}, props.emojis, account, props.loadProfile));
+    return <View style={{flex: 1}}
+    >
+        <AutoHeightWebView style={{flex: 1, width: '98%'}}
+            onStartShouldSetResponder={(evt) => true}
+            onMoveShouldSetResponder={(evt) => false}
+            onResponderTerminationRequest={(evt) => true}
+            onResponderRelease={(evt) => {
+              console.log('release');
+              if (props.onClick) {
+                  props.onClick();
+              }
+            }
+           }
+           onResponderReject={(evt) => {console.log('reect', evt)}}
+           source={{
+               html: MFM2HTML(mfmTree, props.emojis), 
+               baseUrl: 'https://' + account.instance,
+           }}
+           scalesPageToFit={false}
+           onMessage={(ev) => {
+               console.log('got ev', ev);
+               const obj = JSON.parse(ev.nativeEvent.data);
+               switch (obj.type) {
+               case 'openurl':
+                  Linking.openURL(obj.url);
+                  break;
+              case 'openprofile':
+                  loadProfile(account, obj.username, obj.host, props.loadProfile);
+                  return;
+               default:
+                   console.log('obj', obj);
+               }
+           }}
+           originWhitelist={['*']} />
+        </View>;
     return <Text>{reactified}</Text>;
 }
 

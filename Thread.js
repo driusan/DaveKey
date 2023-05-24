@@ -41,7 +41,7 @@ export function RenderThread(props) {
         });
         api('notes/children', {noteId: props.postId, depth: 12})
         .then( (json) => {
-            console.log(json);
+            // console.log(json);
             setChildren(json);
         });
     }, [props.postId, props.account]);

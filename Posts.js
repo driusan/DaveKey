@@ -1,6 +1,6 @@
 import MFM from './MFM';
 import { StyleSheet, Pressable, Text, View, Image, Button } from 'react-native';
-import { useContext } from 'react';
+import { useContext, useCallback } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
@@ -115,6 +115,12 @@ function PostHeader(props) {
 }
 export function Post(props) {
     const navigation = useNavigation();
+    const loadThread = useCallback( () => {
+      if (navigation && navigation.push) {
+        console.log("Pushing thread", props.noteid);
+        navigation.push("Thread", { PostId: props.noteid});
+      }
+    }, [props.noteid]);
     // FIXME: Come up with a more robust regex
     const urlRE = /https?:\/\/[\w./\-?+]+/g;
     const thetext = props.text || ''
@@ -148,12 +154,7 @@ export function Post(props) {
          })}
        </View>
        ) : <View />;
-    const text = props.text ? <MFM text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
-    const loadThread = () => {
-        if (navigation && navigation.push) {
-            navigation.push("Thread", { PostId: props.noteid});
-        }
-    }
+    const text = props.text ? <MFM onClick={loadThread} text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
     if (props.reply) {
         return (
           <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
@@ -175,8 +176,8 @@ export function Post(props) {
        );
     } else {
         return (
-         <Pressable onPress={loadThread}>
           <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
+         <Pressable onPress={loadThread}>
             <PostHeader author={props.author}
                 visibility={props.visibility}
                 onProfileClick={props.onProfileClick}
@@ -188,8 +189,8 @@ export function Post(props) {
             {images}
             {previews}
             {reactions}
-          </View>
          </Pressable>
+          </View>
        );
     }
 }
