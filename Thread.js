@@ -3,12 +3,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCalckeyAccount } from './Account';
 import { useEffect, useState } from 'react';
 import { Post } from './Posts';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 export function Thread({navigation, route}) {
     const account = useCalckeyAccount();
     if (!route.params.PostId) {
         return <View><Text>Internal error. Can not render thread without PostId.</Text></View>;
     }
+    // console.log('route', route);
     return (
     <SafeAreaView style={{flex: 1}}>
         <ScrollView>

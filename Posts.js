@@ -51,7 +51,7 @@ export function PostAuthor(props) {
     );
 }
 
-function PostContext(props) {
+export function PostContext(props) {
   if (!props.context) {
     return <View />;
   }
@@ -156,7 +156,7 @@ export function Post(props) {
     }
     if (props.reply) {
         return (
-          <View style={styles.postContainer}>
+          <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
             <Text>{props.replyLabel || 'In reply to:'}</Text>
             <PostContext context={props.reply} onProfileClick={props.onProfileClick} />
             <Pressable onPress={loadThread}>
@@ -176,7 +176,7 @@ export function Post(props) {
     } else {
         return (
          <Pressable onPress={loadThread}>
-          <View style={styles.postContainer}>
+          <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
             <PostHeader author={props.author}
                 visibility={props.visibility}
                 onProfileClick={props.onProfileClick}
@@ -238,7 +238,7 @@ export function PostList(props) {
             // boost
             return (
               <View key={i}
-                    style={styles.postContainer}>
+                  style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
                 <View style={{
                       flex: 1,
                       flexDirection: 'row',
@@ -307,6 +307,7 @@ export function FlatListPost(props) {
                         replyLabel={'RE:'}
                         emojis={p.emojis}
                         onProfileClick={props.onProfileClick} 
+                        noBorder={props.noBorder}
                     />;
         } else if (p.text && !p.renote) {
             // Plain post
@@ -321,6 +322,7 @@ export function FlatListPost(props) {
                 reply={p.reply}
                 emojis={p.emojis}
                 onProfileClick={props.onProfileClick} 
+                noBorder={props.noBorder}
             />;
         } else if (!p.text && p.renote) {
             // boost
@@ -364,6 +366,7 @@ export function FlatListPost(props) {
                     emojis={p.emojis}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
+                    noBorder={props.noBorder}
                 />;
             }
             console.warn(p);
@@ -379,6 +382,12 @@ const styles = StyleSheet.create({
     borderColor: 'black',
     borderStyle: 'solid',
     borderWidth: 1,
+    padding: 10,
+  },
+  postContainerNoBorder: {
+    flex: 1,
+    color: '#000',
+    backgroundColor: '#eee',
     padding: 10,
   },
   postMetaContainer: {

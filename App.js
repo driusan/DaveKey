@@ -1,18 +1,23 @@
 // import 'react-native-gesture-handler';
 
+import { Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
-import {useState,useEffect, useCallback, useContext} from 'react';
+import {useState,useEffect, useCallback, useContext, useRef} from 'react';
 import { FlatListPost } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, getStateFromPath, getPathFromState } from '@react-navigation/native';
 import { AccountContext, useCalckeyAccount} from './Account';
 import { MyProfile, OtherProfile } from './Profile';
 import {Thread} from './Thread';
 import { MenuProvider} from 'react-native-popup-menu';
+import { useNotifications, NotificationsPage } from './Notifications';
+import * as Notifications from 'expo-notifications';
+
+
 
 
 const Stack = createNativeStackNavigator();
@@ -49,6 +54,7 @@ function ActionsDrawer() {
           <Drawer.Navigator screenOptions={{ headerShown: false }}>
               {profileLink}
               <Drawer.Screen name="Home" component={ActionsStack} />
+              <Drawer.Screen name="Notifications" component={NotificationsPage} />
               <Drawer.Screen name="Logout" component={Logout} />
           </Drawer.Navigator>
       );
@@ -177,12 +183,37 @@ function TimelineSelect(props) {
 
 export default function App() {
     const account = useCalckeyAccount();
-
+    useNotifications();
     return (
-
       <AccountContext.Provider value={account}>
       <MenuProvider style={{flex: 1}}>
-        <NavigationContainer>
+        <NavigationContainer linking={{
+            prefixes: ['calckey://'],
+            config: {
+                screens: {
+                    "Home": {
+                        screens: {
+                            "Thread": "notes/:PostId",
+                            "Profile" : "profiles/:ProfileId",
+                        }
+                    },
+                }
+            },
+            subscribe(listener) {
+              const onReceiveURL = (url) => {
+                  console.log('received url', url)};
+
+              // Listen to incoming links from deep linking
+              const eventListenerSubscription = Linking.addEventListener('url subscribe', onReceiveURL);
+
+              // Listen to expo push notifications
+              const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+                const url = response.notification.request.content.data.url;
+                // Let React Navigation handle the URL
+                listener(url);
+              });
+            }
+        }}>
           <ActionsDrawer account={account}/>
         </NavigationContainer>
       </MenuProvider>

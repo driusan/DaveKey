@@ -36,6 +36,7 @@ function GetAccessToken(props) {
                 "read:account",
                 "write:account",
                 "write:notes",
+                "read:notifications",
             ],
             callbackUrl: 'https://' + instance + '/?loginsuccess=true',
          }),

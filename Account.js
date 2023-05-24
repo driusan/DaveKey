@@ -85,7 +85,7 @@ export function useCalckeyAccount() {
             i: accessToken, 
             ...params,
         };
-        console.log('api', url, params);
+        console.log('api', url);
         return fetch(url, {
           method: 'POST',
           headers: {
