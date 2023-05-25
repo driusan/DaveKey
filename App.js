@@ -16,6 +16,7 @@ import {Thread} from './Thread';
 import { MenuProvider} from 'react-native-popup-menu';
 import { useNotifications, NotificationsPage } from './Notifications';
 import * as Notifications from 'expo-notifications';
+import { ServerContext } from './contexts';
 
 
 
@@ -184,8 +185,20 @@ function TimelineSelect(props) {
 export default function App() {
     const account = useCalckeyAccount();
     useNotifications();
+    const [serverMeta, setServerMeta] = useState(null);
+    useEffect( () => {
+        if (!account) {
+            return;
+        }
+        account.api("meta", {detail: false}).then( (json) => {
+            console.log('got meta', json);
+            setServerMeta(json);
+        }).catch( (e) => console.error(e));
+    }, [account.instance]);
+
     return (
       <AccountContext.Provider value={account}>
+      <ServerContext.Provider value={serverMeta}>
       <MenuProvider style={{flex: 1}}>
         <NavigationContainer linking={{
             prefixes: ['calckey://'],
@@ -217,6 +230,7 @@ export default function App() {
           <ActionsDrawer account={account}/>
         </NavigationContainer>
       </MenuProvider>
+      </ServerContext.Provider>
       </AccountContext.Provider>
     );
 }

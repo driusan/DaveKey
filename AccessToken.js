@@ -6,7 +6,7 @@ import React, {useState,useEffect} from 'react';
 import * as Crypto from 'expo-crypto';
 
 function GetAccessToken(props) {
-  const [instance, setInstance] = useState('doomscroller.social');
+  const [instance, setInstance] = useState('');
   const [instanceSelected, setInstanceSelected] = useState(false);
 
   const [appSecret, setAppSecret] = useState(null);
@@ -37,6 +37,7 @@ function GetAccessToken(props) {
                 "write:account",
                 "write:notes",
                 "read:notifications",
+                "write:reactions",
             ],
             callbackUrl: 'https://' + instance + '/?loginsuccess=true',
          }),
@@ -138,7 +139,7 @@ function GetAccessToken(props) {
       <TextInput value={instance}
           onChangeText={setInstance}
           style={styles.instanceInput}
-          placeholder="doomscroller.social"
+          placeholder="calckey.social"
           
       />
       <View style={styles.loginButton}>

@@ -1,5 +1,5 @@
 import MFM from './MFM';
-import { StyleSheet, Pressable, Text, View, Image, Button } from 'react-native';
+import { StyleSheet, Pressable, Text, View, Image, Button, Alert } from 'react-native';
 import { useContext, useCallback } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -9,6 +9,8 @@ import { Entypo } from "@expo/vector-icons";
 import { MenuOptions, MenuOption, Menu, MenuTrigger} from 'react-native-popup-menu';
 import * as Linking from 'expo-linking';
 import { AccountContext} from './Account';
+import { ServerContext} from './contexts';
+import { useAPI } from './api';
 
 
 // import RelativeTime from '@yaireo/relative-time'
@@ -73,6 +75,8 @@ export function PostContext(props) {
 
 function PostMenu(props) {
     const account = useContext(AccountContext);
+    const server = useContext(ServerContext);
+    const api = useAPI();
     const options = [];
     if (account && props.PostId) {
         options.push(<MenuOption key="open" onSelect={() => Linking.openURL('https://' + account.instance + '/notes/' + props.PostId)} text="Open in browser" />);
@@ -82,12 +86,44 @@ function PostMenu(props) {
                 Linking.openURL(props.OriginalURL)
             }} text="Open original in browser" />);
     }
+    if (account && props.PostId) {
+      options.push(<View key="divider" style={{
+               borderBottomColor: 'black',
+               borderBottomWidth: StyleSheet.hairlineWidth,
+             }} />);
+      options.push(<MenuOption key="boost" onSelect={() => {
+          console.log('api', api);
+        api.call("notes/create", {
+          renoteId: props.PostId,
+          visibility: 'public',
+        }).then ( (json) => {
+            console.log(json);
+            Alert.alert('Boosted post');
+        });
+      }} text="Boost" />);
+      options.push(<MenuOption key="like" onSelect={() => {
+        console.log(server);
+        // Alert.alert('should make API call to notes/reactions/create {noteId: props.PostId, reaction: props.DefaultReaction}');
+        api.call("notes/reactions/create", {
+          noteId: props.PostId,
+          reaction: server.defaultReaction || '⭐'
+        }).then ( (json) => {
+            console.log(json);
+            Alert.alert('Liked post');
+        }).catch( (e) => console.warn(e));
+      }} text="Like" />);
+    }
+
     return (
         <Menu style={{flex: 1}}>
           <MenuTrigger style={{flex: 1, alignSelf: 'flex-end'}}>
             <Entypo name="dots-three-vertical" size={24} color="black" />
           </MenuTrigger>
-          <MenuOptions>{options}</MenuOptions>
+          <MenuOptions>
+            {options}
+
+          </MenuOptions>
+
         </Menu>
       );
 }

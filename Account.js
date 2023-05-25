@@ -97,11 +97,22 @@ export function useCalckeyAccount() {
         }).then(
             (resp) => {
                 if (!resp.ok) {
-                    throw new Error('Received status code ' + resp.status + ' for ' + endpoint);
+                    return resp.json();
+                    // throw new Error('Received status code ' + resp.status + ' for ' + endpoint);
+                }
+                if (resp.status == 204) {
+                    return {};
                 }
                 return resp.json();
             }
-        );
+        ).then(
+            (json) => {
+                if (json.error) {
+                    console.log(json.error);
+                    throw new Error(json.error);
+                }
+                return json;
+        });;
     }
   };
 }

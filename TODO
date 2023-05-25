@@ -6,7 +6,21 @@ Clickable hashtags (expected behaviour?)
     (or some other behaviour? /api/hashtags/users? /api/hashtags/show?) 
 Show custom emojis in reactions
 CWs when applicable
-Finish MFM implementation -- convert to WebView to have access to display: inline-block?
+Finish MFM implementation 
+    - Mention - done
+    - Hashtag - needs onclick behaviour
+    - Link - done
+    - Custom emoji - done, needs testing
+    - Bold - done
+    - Italic - done
+    - Small - done, needs testing
+    - Quote - done
+    - center - done
+    - code (inline) - done
+    - code (block) - done
+    - Math (inline) - not done
+    - Math (block) - not done
+    - functions - not done
 Handle video embedded, not just images
 Render Polls
 Notifications
@@ -14,3 +28,4 @@ Notifications
     - style notifications page properly
     - actions (reply/like) in notification
 Antennas
+Reply

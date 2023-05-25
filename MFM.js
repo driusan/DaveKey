@@ -1,6 +1,6 @@
 import * as mfm from 'mfm-js';
 import { StyleSheet, View, Text, Pressable, Image } from 'react-native';
-import {useContext} from 'react';
+import {memo, useContext, useMemo } from 'react';
 import {AccountContext} from './Account';
 import * as Linking from 'expo-linking';
 // import { WebView } from 'react-native-webview';
@@ -140,7 +140,7 @@ function MFM2HTML(mfmTree, emojis) {
         case 'small':
            return "<small>" + children + "</small>";
         case 'quote':
-           return "<blockquote>" + children + "</blockquote>";
+           return "<blockquote style=\"background: #ddd; margin: 1em; padding: 1em; margin-left: 0; display: block; border-left: 8px solid #222;\">" + children + "</blockquote>";
         case 'emojiCode':
           if (emojis) {
             for (const el of emojis) {
@@ -151,11 +151,11 @@ function MFM2HTML(mfmTree, emojis) {
           }
           return "<span>:" + node.props.name + ":</span>";
         case 'inlineCode':
-          return "<code>" + children + "</code>";
+          return "<code style=\"display: inline-block; background: #ddd; padding: 0.5ex; \">" + node.props.code + "</code>";
         case 'blockCode':
-          return "<code style=\"white-space: pre; display: block;\">" + children + "</code>";
+          return "<code style=\"background: #ddd; margin: 1em; padding: 1em; margin-left: 0; white-space: pre; display: block;\">" + node.props.code + "</code>";
         case 'center':
-          return "<center>" + children + "</center>";
+          return "<center>" +children + "</center>";
         default:
             console.warn(node.type + ' not implemented');
             return '<div>' + node.type + ' Not Implemented</div>'
@@ -164,27 +164,27 @@ function MFM2HTML(mfmTree, emojis) {
     const nodesAsHTML = mfmTree.map(node2HTML);
     return '<div>' + nodesAsHTML.join('') + '</div>';
 }
-export default function MFM(props) {
-    const account = useContext(AccountContext);
-    const mfmTree = mfm.parse(props.text);
-    const reactified = mfmTree.map(mfm2React2({}, props.emojis, account, props.loadProfile));
-    return <View style={{flex: 1}}
-    >
-        <AutoHeightWebView style={{flex: 1, width: '98%'}}
+
+const MemoWebView = memo(function MemoWebView(props) {
+  return <AutoHeightWebView style={{flex: 1, width: '98%'}}
             onStartShouldSetResponder={(evt) => true}
             onMoveShouldSetResponder={(evt) => false}
             onResponderTerminationRequest={(evt) => true}
             onResponderRelease={(evt) => {
               console.log('release');
               if (props.onClick) {
+                  console.log('onclick');
                   props.onClick();
+              } else {
+                  console.log(props);
+                  console.log('no onclick');
               }
             }
            }
            onResponderReject={(evt) => {console.log('reect', evt)}}
            source={{
-               html: MFM2HTML(mfmTree, props.emojis), 
-               baseUrl: 'https://' + account.instance,
+               html: props.html,
+               baseUrl: 'https://' + props.instance,
            }}
            scalesPageToFit={false}
            onMessage={(ev) => {
@@ -202,6 +202,15 @@ export default function MFM(props) {
                }
            }}
            originWhitelist={['*']} />
+});
+export default function MFM(props) {
+    const account = useContext(AccountContext);
+    const html = useMemo( () => {
+       const mfmTree = mfm.parse(props.text);
+       return MFM2HTML(mfmTree, props.emojis);
+    }, [props.text, props.emojis]);
+    return <View style={{flex: 1}}>
+        <MemoWebView html={html} instance={account.instance} onClick={props.onClick}/>
         </View>;
     return <Text>{reactified}</Text>;
 }
