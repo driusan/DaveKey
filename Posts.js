@@ -38,6 +38,7 @@ export function PostModal({show, onClose, replyTo, replyContext}) {
               <View style={{flex: 1, alignItems: 'center'}}><Text style={{flex: 1, textAlign: 'right'}}>Characters left: {server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></View>
             </View>
             {replyContext}
+            <MFM style={{flex: 2}} text={content} />
             <TextInput multiline={true} 
                 style={{flex: 6, padding: 2, margin: 2, borderColor: 'black', borderWidth: 2, textAlignVertical: 'top'}}
                 autoFocus={true}
