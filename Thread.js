@@ -2,7 +2,7 @@ import { Text, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCalckeyAccount } from './Account';
 import { useEffect, useState } from 'react';
-import { Post } from './Posts';
+import { Post, PostModal } from './Posts';
 import { useFocusEffect } from '@react-navigation/native';
 
 
@@ -27,6 +27,7 @@ export function Thread({navigation, route}) {
 
 export function RenderThread(props) {
     const api = props.account.api;
+    const [replyTo, setReplyTo] = useState(null);
     const [displayedPost, setDisplayedPost] = useState(null);
     const [conversation, setConversation] = useState([]);
     const [children, setChildren] = useState([]);
@@ -50,16 +51,18 @@ export function RenderThread(props) {
     }
     return (
        <View style={{flex: 1}}>
+          <PostModal show={replyTo != null} replyTo={replyTo} onClose={() => setReplyTo(null)} />
           <ConversationContext posts={conversation} />
           <Post uri={displayedPost.uri}
             text={displayedPost.text} 
             time={displayedPost.createdAt}
             author={displayedPost.user}
+            doReply={setReplyTo}
             content={displayedPost}
             noteid={displayedPost.id}
             visibility={displayedPost.visibility}
           />
-          <ConversationContext posts={children} />
+          <ConversationContext doReply={setReplyTo} posts={children} />
        </View>
     );
 }
@@ -73,6 +76,7 @@ function ConversationContext(props) {
             text={post.text} 
             time={post.createdAt}
             author={post.user}
+            doReply={props.doReply}
             content={post}
             noteid={post.id}
             visibility={post.visibility}

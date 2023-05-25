@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
 import {useState,useEffect, useCallback, useContext, useRef} from 'react';
-import { FlatListPost } from './Posts';
+import { FlatListPost, PostModal } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer, getStateFromPath, getPathFromState } from '@react-navigation/native';
@@ -17,9 +17,7 @@ import { MenuProvider} from 'react-native-popup-menu';
 import { useNotifications, NotificationsPage } from './Notifications';
 import * as Notifications from 'expo-notifications';
 import { ServerContext } from './contexts';
-
-
-
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -240,6 +238,8 @@ function Timeline({navigation}) {
   const account = useContext(AccountContext);
   const timeline = useTimeline(account, timelineType);
   const [includeBoosts, setIncludeBoosts] = useState(true);
+  const [postModalVisible, setPostModalVisible] = useState(false);
+  const [postReplyId, setPostReplyId] = useState(null);
 
   const onRefresh = useCallback(() => {
       timeline.moreBefore();
@@ -266,10 +266,12 @@ function Timeline({navigation}) {
         <FlatList
            data={timeline.posts}
            renderItem={({item}) => <FlatListPost post={item} 
+              doReply={(postId) => { setPostReplyId(postId); setPostModalVisible(true); }}
               onProfileClick={profileNavigate}
            />}
            ListHeaderComponent={
              <View>
+               <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
                <TimelineSelect
                   onChange={setTimelineType}
                   active={timelineType}
@@ -282,6 +284,7 @@ function Timeline({navigation}) {
            stickyHeaderIndices={[0]}
            stickyHeaderHiddenOnScroll={true}
         />
+        <View style={{position: 'absolute', bottom: 50, right: 50}}><Pressable onPress={() => setPostModalVisible(true)}><AntDesign name="pluscircle" size={48} color="green" /></Pressable></View>
      <StatusBar style="dark" />
     </SafeAreaView>
   );

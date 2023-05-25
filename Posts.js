@@ -1,6 +1,6 @@
 import MFM from './MFM';
-import { StyleSheet, Pressable, Text, View, Image, Button, Alert } from 'react-native';
-import { useContext, useCallback } from 'react';
+import { StyleSheet, Pressable, Text, TextInput, View, Image, Button, Alert, Modal } from 'react-native';
+import { useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
@@ -13,8 +13,74 @@ import { ServerContext} from './contexts';
 import { useAPI } from './api';
 
 
+
 // import RelativeTime from '@yaireo/relative-time'
 
+export function PostModal({show, onClose, replyTo, replyContext}) {
+    const author = useContext(AccountContext);
+    const server = useContext(ServerContext);
+    const [content, setContent] = useState('');
+    const api = useAPI();
+    const postAuthor = (author && author.accountInfo) ?
+            <View style={{flex: 3, height: 50}}>
+                <PostAuthor user={author.accountInfo}
+                          onProfileClick={() => {}} 
+                 />
+             </View> : <View />;
+             console.log(server);
+    
+    return <Modal animationType="slide" style={{flex: 1}}
+                visible={show}
+                onRequestClose={() => onClose()}>
+        <View style={{flex: 1}}>
+            <View style={{flex: 1, flexDirection: 'row'}}>
+              {postAuthor}
+              <View style={{flex: 1, alignItems: 'center'}}><Text style={{flex: 1, textAlign: 'right'}}>Characters left: {server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></View>
+            </View>
+            {replyContext}
+            <TextInput multiline={true} 
+                style={{flex: 6, padding: 2, margin: 2, borderColor: 'black', borderWidth: 2, textAlignVertical: 'top'}}
+                autoFocus={true}
+                value={content}
+                onChangeText={setContent}
+                placeholder="Say something"/>
+
+            <View style={{flex: 1, flexDirection: 'row', alignContent: 'stretch', borderWidth: 3}}>
+            <View style={{flex: 1, padding: 3}}><Button title="Post" onPress={() => {
+                if (content == '') {
+                    Alert.alert('No content', 'Did you want to cancel instead of posting?');
+                    return;
+                }
+                const params = {
+                    text: content,
+                    poll: null,
+                    localOnly: false,
+                    visibility: "public"
+                };
+                if (replyTo) {
+                    params['replyId']= replyTo;
+                }
+
+                api.call("notes/create", params).then(
+                    (json) => {
+                        console.log(json);
+                        // reset the content for future replies
+                        setContent('');
+                        onClose();
+                    }
+                ).catch( (e) => {
+                    console.error(e);
+                    Alert.alert('Could not post');
+                    onClose();
+                });
+              }}/></View>
+              <View style={{flex: 1, padding: 3}}><Button style={{flex: 1}} title="Cancel" onPress={() => {
+                  onClose();
+              }} /></View>
+              </View>
+        </View>
+    </Modal>;
+}
 function PostVisibility(props) {
     switch (props.visibility) {
         case 'public':
@@ -101,6 +167,11 @@ function PostMenu(props) {
             Alert.alert('Boosted post');
         });
       }} text="Boost" />);
+      if (props.doReply) {
+        options.push(<MenuOption key="reply" onSelect={() => {
+            props.doReply(props.PostId);
+        }} text="Reply" />);
+      };
       options.push(<MenuOption key="like" onSelect={() => {
         console.log(server);
         // Alert.alert('should make API call to notes/reactions/create {noteId: props.PostId, reaction: props.DefaultReaction}');
@@ -143,7 +214,7 @@ function PostHeader(props) {
                       onProfileClick={props.onProfileClick} 
            />
           <PostVisibility visibility={props.visibility} />
-          <PostMenu PostId={props.content.id} OriginalURL={props.content.url || props.content.uri} myAccount={props.myAccount}/>
+          <PostMenu doReply={props.doReply} PostId={props.content.id} OriginalURL={props.content.url || props.content.uri} myAccount={props.myAccount}/>
         </View>
         <Text style={styles.postTime}>{timestr}</Text>
       </View>
@@ -200,6 +271,7 @@ export function Post(props) {
                 <PostHeader author={props.author}
                     visibility={props.visibility}
                     time={props.time}
+                    doReply={props.doReply}
                     onProfileClick={props.onProfileClick}
                     content={props.content}
                 />
@@ -218,6 +290,7 @@ export function Post(props) {
                 visibility={props.visibility}
                 onProfileClick={props.onProfileClick}
                 content={props.content}
+                doReply={props.doReply}
                 time={props.time}
                 myAccount={props.myAccount}
             />
@@ -251,6 +324,7 @@ export function PostList(props) {
                         visibility={p.visibility}
                         reply={p.renote}
                         replyLabel={'RE:'}
+                        doReply={props.doReply}
                         emojis={p.emojis}
                         onProfileClick={props.onProfileClick} 
                         myAccount={props.myAccount}
@@ -268,6 +342,7 @@ export function PostList(props) {
                 visibility={p.visibility}
                 reply={p.reply}
                 emojis={p.emojis}
+                doReply={props.doReply}
                 onProfileClick={props.onProfileClick} 
                 myAccount={props.myAccount}
             />;
@@ -297,6 +372,7 @@ export function PostList(props) {
                     content={p.renote}
                     visibility={p.renote.visibility}
                     emojis={p.emojis}
+                    doReply={props.doReply}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
                 />
@@ -314,6 +390,7 @@ export function PostList(props) {
                     author={p.user}
                     visibility={p.visibility}
                     reply={p.reply}
+                    doReply={props.doReply}
                     emojis={p.emojis}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
@@ -338,6 +415,7 @@ export function FlatListPost(props) {
                         text={p.text} 
                         time={p.createdAt}
                         content={p}
+                        doReply={props.doReply}
                         author={p.user}
                         visibility={p.visibility}
                         reply={p.renote}
@@ -358,6 +436,7 @@ export function FlatListPost(props) {
                 visibility={p.visibility}
                 reply={p.reply}
                 emojis={p.emojis}
+                doReply={props.doReply}
                 onProfileClick={props.onProfileClick} 
                 noBorder={props.noBorder}
             />;
@@ -380,6 +459,7 @@ export function FlatListPost(props) {
                     text={p.renote.text} 
                     noteid={p.renote.id}
                     time={p.createdAt}
+                    doReply={props.doReply}
                     author={p.renote.user}
                     content={p.renote}
                     visibility={p.renote.visibility}
@@ -400,6 +480,7 @@ export function FlatListPost(props) {
                     author={p.user}
                     visibility={p.visibility}
                     reply={p.reply}
+                    doReply={props.doReply}
                     emojis={p.emojis}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
@@ -447,4 +528,5 @@ const styles = StyleSheet.create({
       flex: 1,
   },
 });
+
 // export default { PostList, Post };
