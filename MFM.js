@@ -37,19 +37,20 @@ function loadProfile(account, username, host, profileNav) {
     .catch((e) => console.error(e));
 }
 
-function applyMFMfunc(node, i, _styles) {
+function applyMFMfunc(callback, node) {
     if (node.type != 'fn') {
         throw new Error('applyMFMfunc on non-fn of type ' + node.type);
     }
     switch (node.props.name) {
     default:
         console.warn('unhandled fn ' + node.props.name);
-        return '<span>' + node.children.map(node2HTML).join('') + '</span>';
+        return '<span>' + node.children.map(callback).join('') + '</span>';
     }
 }
 
-function node2HTML(node) {
-        const children = node.children ? node.children.map(node2HTML) : '';
+function node2HTML(callback, node) {
+        const emojis=callback.emojis;
+        const children = node.children ? node.children.map(callback()) : '';
         switch(node.type) {
         case 'text':
           return "<span>" + node.props.text.replaceAll("\n", "<br />") + "</span>";
@@ -70,6 +71,7 @@ function node2HTML(node) {
         case 'quote':
            return "<blockquote style=\"background: #ddd; margin: 1em; padding: 1em; margin-left: 0; display: block; border-left: 8px solid #222;\">" + children + "</blockquote>";
         case 'emojiCode':
+           console.log('emojis', emojis, node.props.name);
           if (emojis) {
             for (const el of emojis) {
               if (el.name == node.props.name) {
@@ -85,14 +87,20 @@ function node2HTML(node) {
         case 'center':
           return "<center>" +children + "</center>";
       case 'fn':
-          return applyMFMfunc(node);
+          return applyMFMfunc(callback, node);
         default:
             console.warn(node.type + ' not implemented');
             return '<div>' + node.type + ' Not Implemented</div>'
         }
     }
 function MFM2HTML(mfmTree, emojis) {
-    const nodesAsHTML = mfmTree.map(node2HTML);
+    const nodeClosure = () => {
+        return (node) => node2HTML(nodeClosure, node);
+    };
+    // We need emojis to be in a context that array.map can access
+    // when the object being mapped on is the node and we can't adjust the calling parameters
+    nodeClosure.emojis = emojis;
+    const nodesAsHTML = mfmTree.map(nodeClosure());
     return '<div>' + nodesAsHTML.join('') + '</div>';
 }
 
@@ -143,7 +151,6 @@ export default function MFM(props) {
     return <View style={{flex: 1}}>
         <MemoWebView html={html} instance={account.instance} onClick={props.onClick}/>
         </View>;
-    return <Text>{reactified}</Text>;
 }
 
 

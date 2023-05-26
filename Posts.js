@@ -313,6 +313,7 @@ export function PostList(props) {
       <View style={styles.flexer}>
       {posts.map((p, i) => {
           // FIXME: Move this logic into <Post />?
+        console.log(p);
         if (p.text && p.renote) {
             // QT
             return <Post key={i}
@@ -408,6 +409,7 @@ export function PostList(props) {
 
 export function FlatListPost(props) {
     const p = props.post;
+    console.log(p);
     if (p.text && p.renote) {
         // QT
         return <Post
@@ -427,6 +429,7 @@ export function FlatListPost(props) {
                     />;
         } else if (p.text && !p.renote) {
             // Plain post
+            console.log(p.emojis);
             return <Post 
                 uri={p.uri}
                 noteid={p.id}
