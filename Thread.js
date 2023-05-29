@@ -3,8 +3,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCalckeyAccount } from './Account';
 import { useEffect, useState } from 'react';
 import { Post, PostModal } from './Posts';
-import { useFocusEffect } from '@react-navigation/native';
-
 
 export function Thread({navigation, route}) {
     const account = useCalckeyAccount();
@@ -61,6 +59,7 @@ export function RenderThread(props) {
             content={displayedPost}
             noteid={displayedPost.id}
             visibility={displayedPost.visibility}
+            reactionEmojis={displayedPost.reactionEmojis}
           />
           <ConversationContext doReply={setReplyTo} posts={children} />
        </View>
@@ -79,6 +78,7 @@ function ConversationContext(props) {
             doReply={props.doReply}
             content={post}
             noteid={post.id}
+            reactionEmojis={post.reactionEmojis}
             visibility={post.visibility}
           />
         })}

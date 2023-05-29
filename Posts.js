@@ -26,8 +26,8 @@ export function PostModal({show, onClose, replyTo, replyContext}) {
                 <PostAuthor user={author.accountInfo}
                           onProfileClick={() => {}} 
                  />
-             </View> : <View />;
-             console.log(server);
+            </View> : <View />;
+             //console.log(server);
     
     return <Modal animationType="slide" style={{flex: 1}}
                 visible={show}
@@ -63,8 +63,8 @@ export function PostModal({show, onClose, replyTo, replyContext}) {
                 }
 
                 api.call("notes/create", params).then(
-                    (json) => {
-                        console.log(json);
+                    () => {
+                        //console.log(json);
                         // reset the content for future replies
                         setContent('');
                         onClose();
@@ -159,12 +159,12 @@ function PostMenu(props) {
                borderBottomWidth: StyleSheet.hairlineWidth,
              }} />);
       options.push(<MenuOption key="boost" onSelect={() => {
-          console.log('api', api);
+          //console.log('api', api);
         api.call("notes/create", {
           renoteId: props.PostId,
           visibility: 'public',
         }).then ( (json) => {
-            console.log(json);
+            // console.log(json);
             Alert.alert('Boosted post');
         });
       }} text="Boost" />);
@@ -174,13 +174,13 @@ function PostMenu(props) {
         }} text="Reply" />);
       };
       options.push(<MenuOption key="like" onSelect={() => {
-        console.log(server);
+        // console.log(server);
         // Alert.alert('should make API call to notes/reactions/create {noteId: props.PostId, reaction: props.DefaultReaction}');
         api.call("notes/reactions/create", {
           noteId: props.PostId,
           reaction: server.defaultReaction || '⭐'
         }).then ( (json) => {
-            console.log(json);
+            //console.log(json);
             Alert.alert('Liked post');
         }).catch( (e) => console.warn(e));
       }} text="Like" />);
@@ -225,7 +225,7 @@ export function Post(props) {
     const navigation = useNavigation();
     const loadThread = useCallback( () => {
       if (navigation && navigation.push) {
-        console.log("Pushing thread", props.noteid);
+        // console.log("Pushing thread", props.noteid);
         navigation.push("Thread", { PostId: props.noteid});
       }
     }, [props.noteid]);
@@ -254,7 +254,30 @@ export function Post(props) {
     const reactions = props.content.reactions && Object.keys(props.content.reactions).length > 0 ? (
        <View style={{marginTop: 15, paddingTop: 5, borderStyle: 'dotted', borderTopColor: 'green', borderTopWidth: 2, flexDirection: 'row', flexWrap: 'wrap'}}>
          {Object.keys(props.content.reactions).map((val) => {
-           // FIXME: Handle custom emojis
+           if (val.startsWith(':') && val.endsWith(':')) {
+               const emojiname = val.substr(1, val.length-2);
+               console.log(emojiname, props.reactionEmojis);
+
+                /*
+                 <Image style={{width: 40, height: 40}}
+                   source={{ uri: props.user.avatarUrl}}
+                 />
+                 */
+               let reactionImage = <Text style={{fontSize: 24}}>{val}</Text>;
+               for (const emoji of props.reactionEmojis) {
+                   if (emoji.name == emojiname) {
+                       reactionImage = <Image style={{width: 24, height: 24}} source={{ uri: emoji.url}} />
+                       break;
+                   }
+               }
+               return (
+                 <View key={val} style={{flexDirection: 'row', flexWrap: 'nowrap', paddingRight: 20, alignItems: 'center'}}>
+                   {reactionImage}
+                   <Text style={{fontSize: 24}}>{props.content.reactions[val]}</Text>
+                 </View>
+               );
+
+           }
            return <View key={val} style={{flexDirection: 'row', flexWrap: 'nowrap', paddingRight: 20}}>
                         <Text style={{fontSize: 24}}>{val}</Text>
                         <Text style={{fontSize: 24}}>{props.content.reactions[val]}</Text>
@@ -313,7 +336,7 @@ export function PostList(props) {
       <View style={styles.flexer}>
       {posts.map((p, i) => {
           // FIXME: Move this logic into <Post />?
-        console.log(p);
+        //console.log(p);
         if (p.text && p.renote) {
             // QT
             return <Post key={i}
@@ -409,7 +432,7 @@ export function PostList(props) {
 
 export function FlatListPost(props) {
     const p = props.post;
-    console.log(p);
+    // console.log(p);
     if (p.text && p.renote) {
         // QT
         return <Post
@@ -424,12 +447,13 @@ export function FlatListPost(props) {
                         reply={p.renote}
                         replyLabel={'RE:'}
                         emojis={p.emojis}
+                        reactionEmojis={p.reactionEmojis}
                         onProfileClick={props.onProfileClick} 
                         noBorder={props.noBorder}
                     />;
         } else if (p.text && !p.renote) {
             // Plain post
-            console.log(p.emojis);
+            //console.log(p.emojis);
             return <Post 
                 uri={p.uri}
                 noteid={p.id}
@@ -440,6 +464,7 @@ export function FlatListPost(props) {
                 visibility={p.visibility}
                 reply={p.reply}
                 emojis={p.emojis}
+                reactionEmojis={p.reactionEmojis}
                 doReply={props.doReply}
                 onProfileClick={props.onProfileClick} 
                 noBorder={props.noBorder}
@@ -468,6 +493,7 @@ export function FlatListPost(props) {
                     content={p.renote}
                     visibility={p.renote.visibility}
                     emojis={p.emojis}
+                    reactionEmojis={p.renote.reactionEmojis}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
                 />
@@ -486,6 +512,7 @@ export function FlatListPost(props) {
                     reply={p.reply}
                     doReply={props.doReply}
                     emojis={p.emojis}
+                    reactionEmojis={p.reactionEmojis}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
                     noBorder={props.noBorder}
