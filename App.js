@@ -9,6 +9,7 @@ import {useState,useEffect, useCallback, useContext, useRef} from 'react';
 import { FlatListPost, PostModal } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, getStateFromPath, getPathFromState } from '@react-navigation/native';
 import { AccountContext, useCalckeyAccount} from './Account';
 import { MyProfile, OtherProfile } from './Profile';
@@ -21,11 +22,12 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
+const Tab = createBottomTabNavigator();
 
 function ActionsStack() {
   return (
-    <Stack.Navigator screenOptions={{headerShown: false}}>
-      <Stack.Screen name="Timeline" component={Timeline} />
+    <Stack.Navigator screenOptions={{}}>
+      <Stack.Screen options={{headerShown: false}} name="Timeline" component={Timelines} initialParams={{timelineType: 'hybrid'}}/>
       <Stack.Screen name="Profile" component={OtherProfile} />
       <Stack.Screen name="Thread" component={Thread} />
     </Stack.Navigator>
@@ -50,7 +52,7 @@ function ActionsDrawer() {
       const profileLink = name == '' ? null :
         <Drawer.Screen name={account.mentionName()} component={MyProfile} />;
       return (
-          <Drawer.Navigator screenOptions={{ headerShown: false }}>
+          <Drawer.Navigator screenOptions={{}}>
               {profileLink}
               <Drawer.Screen name="Home" component={ActionsStack} />
               <Drawer.Screen name="Notifications" component={NotificationsPage} />
@@ -115,7 +117,7 @@ function useTimeline(account, type) {
       });
   }
   useEffect( () => {
-      if (!account || !account.i) {
+      if (!account || !account.i || !type) {
           return;
       }
       loadMore(null, null);
@@ -233,13 +235,69 @@ export default function App() {
     );
 }
 
-function Timeline({navigation}) {
-  const [timelineType, setTimelineType] = useState('hybrid');
+function Timelines() {
+    const icon = (typ, color, size) => {
+        let i;
+        switch(typ) {
+        case 'global':
+            i = "🌐"; break;
+        case 'local':
+            i = '🏠'; break;
+        case 'hybrid':
+            i = '💑'; break;
+        case 'recommended':
+            i = '🌟'; break;
+        }
+        return <Text style={{width: size, height: size, color: color}}>{i}</Text>;
+    }
+    /*
+        {icon('global',  '🌐', props.active)}
+        {icon('local', '🏠', props.active)}
+        {icon('hybrid', '💑', props.active)}
+        {icon('recommended', '🌟', props.active)}
+        */
+    return (
+      <Tab.Navigator screenOptions={{headerShown: false}}>
+        <Tab.Screen name="Global"
+           options={
+              {
+                tabBarIcon: ({focused, color, size}) => icon('global', color, size)}
+              }
+            initialParams={{timelineType: 'global'}}
+            component={Timeline} />
+        <Tab.Screen name="Hybrid"
+           options={
+              {
+                tabBarIcon: ({focused, color, size}) => icon('hybrid', color, size)}
+              }
+            component={Timeline}
+            initialParams={{timelineType: 'hybrid'}}
+            />
+        <Tab.Screen name="Local" component={Timeline}
+           options={
+              {
+                tabBarIcon: ({focused, color, size}) => icon('local', color, size)}
+              }
+            initialParams={{timelineType: 'local'}}
+        />
+        <Tab.Screen name="Recommended" component={Timeline}
+           options={
+              {
+                tabBarIcon: ({focused, color, size}) => icon('recommended', color, size)}
+              }
+              initialParams={{timelineType: 'recommended'}}
+
+        />
+      </Tab.Navigator>
+    );
+}
+function Timeline({navigation, route}) {
   const account = useContext(AccountContext);
-  const timeline = useTimeline(account, timelineType);
+  const timeline = useTimeline(account, route.params?.timelineType);
   const [includeBoosts, setIncludeBoosts] = useState(true);
   const [postModalVisible, setPostModalVisible] = useState(false);
   const [postReplyId, setPostReplyId] = useState(null);
+  console.log(route);
 
   const onRefresh = useCallback(() => {
       timeline.moreBefore();
@@ -261,10 +319,11 @@ function Timeline({navigation}) {
       />;
   }
   let refreshControl = <RefreshControl refreshing={timeline.isRefreshing} onRefresh={onRefresh} enabled={true}/>;
+  const displayedposts = includeBoosts ? timeline.posts : timeline.posts.filter((post) => post.text);
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <View style={{flex: 1}}>
         <FlatList
-           data={timeline.posts}
+           data={displayedposts}
            renderItem={({item}) => <FlatListPost post={item} 
               doReply={(postId) => { setPostReplyId(postId); setPostModalVisible(true); }}
               onProfileClick={profileNavigate}
@@ -272,10 +331,6 @@ function Timeline({navigation}) {
            ListHeaderComponent={
              <View>
                <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
-               <TimelineSelect
-                  onChange={setTimelineType}
-                  active={timelineType}
-                />
                 <BoostSelect withBoosts={includeBoosts} setWithBoosts={setIncludeBoosts} />
              </View>
            }
@@ -286,7 +341,7 @@ function Timeline({navigation}) {
         />
         <View style={{position: 'absolute', bottom: 50, right: 50}}><Pressable onPress={() => setPostModalVisible(true)}><AntDesign name="pluscircle" size={48} color="green" /></Pressable></View>
      <StatusBar style="dark" />
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -264,7 +264,7 @@ export function Post(props) {
                  />
                  */
                let reactionImage = <Text style={{fontSize: 24}}>{val}</Text>;
-               for (const emoji of props.reactionEmojis) {
+               for (const emoji of (props.reactionEmojis || [])) {
                    if (emoji.name == emojiname) {
                        reactionImage = <Image style={{width: 24, height: 24}} source={{ uri: emoji.url}} />
                        break;

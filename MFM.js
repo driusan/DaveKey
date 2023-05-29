@@ -44,7 +44,7 @@ function applyMFMfunc(callback, node) {
     switch (node.props.name) {
     default:
         console.warn('unhandled fn ' + node.props.name);
-        return '<span>' + node.children.map(callback).join('') + '</span>';
+        return '<span>' + node.children.map(callback()).join('') + '</span>';
     }
 }
 
