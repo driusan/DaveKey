@@ -1,6 +1,5 @@
 Fix Logout/Login
 Improve styling of threads
-Fix profile clicking in threads
 Clickable hashtags (expected behaviour?)
     - /api/notes/search-by-tag
     (or some other behaviour? /api/hashtags/users? /api/hashtags/show?) 

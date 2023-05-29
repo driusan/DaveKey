@@ -97,7 +97,6 @@ function Profile(props) {
         loadMore(null, null);
     }, [props.account]);
     return (
-      <SafeAreaView style={{flex: 1}}>
         <ScrollView style={styles.mainContainer}
             stickyHeaderIndices={[1]}
             stickyHeaderHiddenOnScroll={false}>
@@ -141,7 +140,6 @@ function Profile(props) {
             />
           </View>
         </ScrollView>
-      </SafeAreaView>
     );
     // FIXME: Pinned notes
     // FIXME: With/without boosts

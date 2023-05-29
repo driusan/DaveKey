@@ -11,7 +11,6 @@ export function Thread({navigation, route}) {
     }
     // console.log('route', route);
     return (
-    <SafeAreaView style={{flex: 1}}>
         <ScrollView>
             <RenderThread postId={route.params.PostId}
                 account={account}
@@ -19,7 +18,6 @@ export function Thread({navigation, route}) {
                     navigation.push("Profile", {ProfileId: profileId});
                 }}/>
         </ScrollView>
-    </SafeAreaView>
     );
 }
 
@@ -50,7 +48,7 @@ export function RenderThread(props) {
     return (
        <View style={{flex: 1}}>
           <PostModal show={replyTo != null} replyTo={replyTo} onClose={() => setReplyTo(null)} />
-          <ConversationContext posts={conversation} />
+          <ConversationContext onProfileClick={props.onProfileClick} posts={conversation} />
           <Post uri={displayedPost.uri}
             text={displayedPost.text} 
             time={displayedPost.createdAt}
@@ -60,8 +58,9 @@ export function RenderThread(props) {
             noteid={displayedPost.id}
             visibility={displayedPost.visibility}
             reactionEmojis={displayedPost.reactionEmojis}
+            onProfileClick={props.onProfileClick}
           />
-          <ConversationContext doReply={setReplyTo} posts={children} />
+          <ConversationContext onProfileClick={props.onProfileClick} doReply={setReplyTo} posts={children} />
        </View>
     );
 }
@@ -80,6 +79,7 @@ function ConversationContext(props) {
             noteid={post.id}
             reactionEmojis={post.reactionEmojis}
             visibility={post.visibility}
+            onProfileClick={props.onProfileClick}
           />
         })}
       </View>

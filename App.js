@@ -28,7 +28,7 @@ function ActionsStack() {
   return (
     <Stack.Navigator screenOptions={{}}>
       <Stack.Screen options={{headerShown: false}} name="Timeline" component={Timelines} initialParams={{timelineType: 'hybrid'}}/>
-      <Stack.Screen name="Profile" component={OtherProfile} />
+      <Stack.Screen options={{headerShown: false}} name="Profile" component={OtherProfile} />
       <Stack.Screen name="Thread" component={Thread} />
     </Stack.Navigator>
   );
