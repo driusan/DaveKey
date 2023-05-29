@@ -49,8 +49,8 @@ function Logout({navigation}) {
 function ActionsDrawer() {
       const account = useContext(AccountContext);
       const name = account.mentionName();
-      const profileLink = name == '' ? null :
-        <Drawer.Screen name={account.mentionName()} component={MyProfile} />;
+      const profileLink = null; /* name == '' ? null :
+        <Drawer.Screen name={account.mentionName()} component={MyProfile} />; */
       return (
           <Drawer.Navigator screenOptions={{}}>
               {profileLink}

@@ -225,7 +225,7 @@ export function Post(props) {
     const navigation = useNavigation();
     const loadThread = useCallback( () => {
       if (navigation && navigation.push) {
-        // console.log("Pushing thread", props.noteid);
+        console.log("Pushing thread", props.noteid);
         navigation.push("Thread", { PostId: props.noteid});
       }
     }, [props.noteid]);
