@@ -2,20 +2,71 @@ Fix Logout/Login
 Improve styling of threads
 CWs when applicable
 Finish MFM implementation 
-    - Mention - done
-    - Hashtag - done
-    - Link - done
-    - Custom emoji - done
-    - Bold - done
-    - Italic - done
-    - Small - done
-    - Quote - done
-    - center - done
-    - code (inline) - done
-    - code (block) - done
-    - Math (inline) - done
-    - Math (block) - done
     - functions - not done
+       - flip (done)
+       - font (done)
+       - x2, x3, x4 (done)
+       - blur (done)
+
+       - jelly
+       - jelly.speed
+
+       - tada
+       - tada.speed
+
+       - jump
+       - jump.speed
+
+       - bounce
+       - bounce.speed
+
+       - spin
+       - spin.left
+       - spin.alternate
+       - spin.x
+       - spin.x,left
+       - spin.x,alternate
+       - spin.y
+       - spin.y,left
+       - spin.y,alternate
+       - spin.speed
+
+       - shake
+       - shake.speed
+
+       - twitch
+       - twitch.speed
+
+       - rainbow
+       - rainbow.speed
+
+       - sparkle
+
+       - rotate
+       - rotate.deg
+       - rotate.x,deg
+
+       - fade
+       - fade.out
+       - fade.speed
+
+       - crop.top
+       - crop.bottom
+       - crop.left
+       - crop.right
+
+       - position.x
+       - position.y
+
+       - scale.x
+       - scale.y
+
+       - fg.color
+       - bg.color
+
+       - <plain>xxx</plain>
+
+
 Handle video embedded, not just images
 Render Polls
 Notifications

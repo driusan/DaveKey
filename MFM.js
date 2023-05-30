@@ -43,10 +43,45 @@ function applyMFMfunc(callback, node) {
     if (node.type != 'fn') {
         throw new Error('applyMFMfunc on non-fn of type ' + node.type);
     }
+    let content = node.children.map(callback()).join('');
     switch (node.props.name) {
+    case 'flip':
+        if (!node.props.args || Object.keys(node.props.args).length == 0) {
+            return '<span style="display: inline-block; transform: scaleX(-1);">' + content + '</span>';
+        }
+        if (node.props.args.v) {
+            content = '<span style="display: inline-block; transform: scaleY(-1);">' + content + '</span>';
+        }
+        if (node.props.args.h) {
+            content = '<span style="display: inline-block; transform: scaleX(-1);">' + content + '</span>';
+        }
+        return content;
+    case 'font':
+        if (node.props.args.serif) {
+            return '<span style="font-family: serif">' + content + '</span>';
+        }
+        if (node.props.args.monospace) {
+            return '<span style="font-family: monospace">' + content + '</span>';
+        }
+        if (node.props.args.cursive) {
+            return '<span style="font-family: cursive">' + content + '</span>';
+        }
+        if (node.props.args.fantasy) {
+            return '<span style="font-family: fantasy">' + content + '</span>';
+        }
+        console.warn('Unhandled font family', node);
+        return '<span>' + content + '</span>';
+    case 'x2':
+        return '<span style="font-size: 200%">' + content + '</span>';
+    case 'x3':
+        return '<span style="font-size: 400%">' + content + '</span>';
+    case 'x4':
+        return '<span style="font-size: 600%">' + content + '</span>';
+    case 'blur':
+        return '<span onclick="this.style.filter = (this.style.filter == \'none\' ? \'blur(6px)\' : \'none\')" style="filter: blur(6px); transition: filter .3s">' + content + '</span>';
     default:
         console.warn('unhandled fn ' + node.props.name);
-        return '<span>' + node.children.map(callback()).join('') + '</span>';
+        return '<span>' + content + '</span>';
     }
 }
 
@@ -119,19 +154,6 @@ const MemoWebView = memo(function MemoWebView(props) {
             onMoveShouldSetResponder={(evt) => false}
             onResponderTerminationRequest={(evt) => true}
             onResponderRelease={(evt) => {
-              // console.log('release', evt);
-              /*
-              if (skipClick) {
-                  return;
-              }
-              if (props.onClick) {
-                  console.log('onclick');
-                  props.onClick();
-              } else {
-                  console.log(props);
-                  console.log('no onclick');
-              }
-              */
               return false;
             }}
            onResponderReject={(evt) => {console.log('reect', evt)}}
@@ -159,7 +181,9 @@ const MemoWebView = memo(function MemoWebView(props) {
                   return;
               case 'defaultclick':
                   if (bubble) {
-                      props.onClick();
+                      if (props.onClick) {
+                        props.onClick();
+                      }
                   };
                   setBubble(true);
                   return;
