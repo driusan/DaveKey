@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
 import {useState,useEffect, useCallback, useContext, useRef} from 'react';
-import { FlatListPost, PostModal } from './Posts';
+import { FlatListPost, PostModal, UserList } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -19,6 +19,7 @@ import { useNotifications, NotificationsPage } from './Notifications';
 import * as Notifications from 'expo-notifications';
 import { ServerContext } from './contexts';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import {useAPI} from './api';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -30,8 +31,39 @@ function ActionsStack() {
       <Stack.Screen options={{headerShown: false}} name="Timeline" component={Timelines} initialParams={{timelineType: 'hybrid'}}/>
       <Stack.Screen options={{headerShown: false}} name="Profile" component={OtherProfile} />
       <Stack.Screen name="Thread" component={Thread} />
+      <Stack.Screen name="Hashtag" component={HashtagPage} />
     </Stack.Navigator>
   );
+}
+
+function HashtagPage({navigation, route}) {
+    const account = useContext(AccountContext);
+    const tag = route.params?.Tag;
+    // hashtags/users doesn't support pagination
+    const posts = useAPIPaginator("notes/search-by-tag", {tag: tag});
+    const [postModalVisible, setPostModalVisible] = useState(false);
+    const [postReplyId, setPostReplyId] = useState(null);
+
+  let refreshControl = <RefreshControl refreshing={posts.isRefreshing} onRefresh={posts.refresh} enabled={true}/>;
+   return (<View>
+        <FlatList
+           data={posts.data}
+           renderItem={({item}) => <FlatListPost post={item} 
+              doReply={(postId) => { setPostReplyId(postId); setPostModalVisible(true); }}
+              onProfileClick={() => {}}
+           />}
+           ListHeaderComponent={
+             <View>
+               <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
+             </View>
+           }
+           ListFooterComponent={<Button title="Load more" onPress={posts.moreAfter} />}
+           refreshControl={refreshControl}
+           stickyHeaderIndices={[0]}
+           stickyHeaderHiddenOnScroll={true}
+        />
+      </View>);
+    return <View><UserList users={users.data} onProfileClick={() => {}} tag={tag} loadMore={users.moreAfter}/></View>;
 }
 function Logout({navigation}) {
     const account = useContext(AccountContext);
@@ -62,6 +94,66 @@ function ActionsDrawer() {
 }
 
 
+function useAPIPaginator(endpoint, params) {
+  const api = useAPI();
+  const [data, setData] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNo, setRefreshNo] = useState(0);
+
+  const loadMore = (since, until) => {
+      if (!api) {
+          return;
+      }
+      const newParams = {...params};
+      if (until) {
+          newParams['untilId'] = until;
+      }
+      if (since) {
+          newParams['sinceId'] = since;
+      }
+      api.call(endpoint, newParams)
+        .then( (json) => {
+          if (json.error) {
+              throw new Error(json);
+          }
+          if (until !== null) {
+              setData([...data, ...json]);
+          } else if (since !== null) {
+              setData([...json, ...data]);
+          } else {
+              setData([...json]);
+          }
+
+          setRefreshing(false);
+      }).catch( (e) => {
+          setRefreshing(false);
+          console.error('error loading ', refreshNo);
+          console.error(e)
+      });
+  }
+  useEffect( () => {
+      loadMore(null, null);
+  }, [endpoint, refreshNo]);
+
+  return {
+      data: data,
+      isRefreshing: refreshing,
+      refresh: () => {
+          setRefreshNo(refreshNo+1);
+      },
+      moreBefore: () => {
+          if (posts) {
+              loadMore(data[0].id, null);
+          }
+      },
+      moreAfter: () => {
+          if (data) {
+              console.log(data[data.length-1].id);
+              loadMore(null, data[data.length-1].id);
+          }
+      }
+  };
+}
 function useTimeline(account, type) {
   const [posts, setPosts] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,7 +163,8 @@ function useTimeline(account, type) {
       if (!account || !account.instance) {
           return;
       }
-      const url = 'https://' + account.instance + "/api/notes/" + type + "-timeline";
+      const endpoint = (type == 'home' ? 'timeline' : type + '-timeline');
+      const url = 'https://' + account.instance + "/api/notes/" + endpoint;
       const params = {
         i: account.i,
       }
@@ -239,6 +332,8 @@ function Timelines() {
     const icon = (typ, color, size) => {
         let i;
         switch(typ) {
+        case 'home':
+            i = '👫'; break;
         case 'global':
             i = "🌐"; break;
         case 'local':
@@ -258,6 +353,13 @@ function Timelines() {
         */
     return (
       <Tab.Navigator screenOptions={{headerShown: false}}>
+        <Tab.Screen name="Friends"
+           options={
+              {
+                tabBarIcon: ({focused, color, size}) => icon('home', color, size)}
+              }
+            initialParams={{timelineType: 'home'}}
+            component={Timeline} />
         <Tab.Screen name="Global"
            options={
               {

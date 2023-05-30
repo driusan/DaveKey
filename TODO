@@ -1,8 +1,5 @@
 Fix Logout/Login
 Improve styling of threads
-Clickable hashtags (expected behaviour?)
-    - /api/notes/search-by-tag
-    (or some other behaviour? /api/hashtags/users? /api/hashtags/show?) 
 CWs when applicable
 Finish MFM implementation 
     - Mention - done
@@ -26,3 +23,4 @@ Notifications
     - style notifications page properly
     - actions (reply/like) in notification
 Antennas
+Hashtag - search for users

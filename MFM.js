@@ -1,8 +1,9 @@
 import * as mfm from 'mfm-js';
 import { StyleSheet, View, Text, Pressable, Image } from 'react-native';
-import {memo, useContext, useMemo } from 'react';
+import {memo, useContext, useMemo, useState } from 'react';
 import {AccountContext} from './Account';
 import * as Linking from 'expo-linking';
+import { useAPI } from './api';
 // import { WebView } from 'react-native-webview';
 import AutoHeightWebView from 'react-native-autoheight-webview'
 
@@ -61,7 +62,8 @@ function node2HTML(callback, node) {
         case 'mention':
           return "<a href=\"#\" onclick=\"window.ReactNativeWebView.postMessage(JSON.stringify({type: 'openprofile', username: '" + node.props.username + "', host: '" + node.props.host + "'})); return false;\">" + node.props.acct + "</a>";
         case 'unicodeEmoji': return node.props.emoji;
-        case 'hashtag': return '#' + node.props.hashtag;
+        case 'hashtag': 
+          return "<a href=\"#\" onclick=\"hash = true;window.ReactNativeWebView.postMessage(JSON.stringify({type: 'hashtag', hashtag: '" + node.props.hashtag + "'})); return false;\">#" + node.props.hashtag + "</a>";
         case 'bold':
            return "<b>" + children + "</b>";
         case 'italic':
@@ -101,16 +103,21 @@ function MFM2HTML(mfmTree, emojis) {
     // when the object being mapped on is the node and we can't adjust the calling parameters
     nodeClosure.emojis = emojis;
     const nodesAsHTML = mfmTree.map(nodeClosure());
-    return '<div>' + nodesAsHTML.join('') + '</div>';
+    return '<body onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type: \'defaultclick\'})); return false;"}><div>' + nodesAsHTML.join('') + "</div></body>";
 }
 
 const MemoWebView = memo(function MemoWebView(props) {
+  const [bubble,setBubble] = useState(true);
   return <AutoHeightWebView style={{flex: 1, width: '98%'}}
             onStartShouldSetResponder={(evt) => true}
             onMoveShouldSetResponder={(evt) => false}
             onResponderTerminationRequest={(evt) => true}
             onResponderRelease={(evt) => {
-              console.log('release');
+              // console.log('release', evt);
+              /*
+              if (skipClick) {
+                  return;
+              }
               if (props.onClick) {
                   console.log('onclick');
                   props.onClick();
@@ -118,8 +125,9 @@ const MemoWebView = memo(function MemoWebView(props) {
                   console.log(props);
                   console.log('no onclick');
               }
-            }
-           }
+              */
+              return false;
+            }}
            onResponderReject={(evt) => {console.log('reect', evt)}}
            source={{
                html: props.html,
@@ -128,16 +136,29 @@ const MemoWebView = memo(function MemoWebView(props) {
            scalesPageToFit={false}
            onMessage={(ev) => {
                console.log('got ev', ev);
+               //ev.preventDefault();
                const obj = JSON.parse(ev.nativeEvent.data);
                switch (obj.type) {
                case 'openurl':
+                  setBubble(false);
                   Linking.openURL(obj.url);
                   break;
               case 'openprofile':
-                  loadProfile(account, obj.username, obj.host, props.loadProfile);
+                  setBubble(false);
+                  loadProfile(props.account, obj.username, obj.host, props.loadProfile);
+                  return;
+              case 'hashtag':
+                  setBubble(false);
+                  props.onHashtagClicked(obj.hashtag);
+                  return;
+              case 'defaultclick':
+                  if (bubble) {
+                      props.onClick();
+                  };
+                  setBubble(true);
                   return;
                default:
-                   console.log('obj', obj);
+                   //console.log('obj', obj);
                }
            }}
            originWhitelist={['*']} />
@@ -149,7 +170,10 @@ export default function MFM(props) {
        return MFM2HTML(mfmTree, props.emojis);
     }, [props.text, props.emojis]);
     return <View style={{flex: 1}}>
-        <MemoWebView html={html} instance={account.instance} onClick={props.onClick}/>
+        <MemoWebView html={html} account={account} instance={account.instance} onClick={props.onClick}
+            onHashtagClicked={props.onHashtagClicked}
+
+            />
         </View>;
 }
 

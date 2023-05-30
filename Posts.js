@@ -1,5 +1,5 @@
 import MFM from './MFM';
-import { StyleSheet, Pressable, Text, TextInput, View, Image, Button, Alert, Modal } from 'react-native';
+import { FlatList, StyleSheet, Pressable, Text, TextInput, View, Image, Button, Alert, Modal } from 'react-native';
 import { useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -223,6 +223,7 @@ function PostHeader(props) {
 }
 export function Post(props) {
     const navigation = useNavigation();
+    const api = useAPI();
     const loadThread = useCallback( () => {
       if (navigation && navigation.push) {
         console.log("Pushing thread", props.noteid);
@@ -232,6 +233,10 @@ export function Post(props) {
     // FIXME: Come up with a more robust regex
     const urlRE = /https?:\/\/[\w./\-?+]+/g;
     const thetext = props.text || ''
+    const [hashtagModal, setHashtagModal] = useState(null);
+    const onHashtag = (hashtag) => {
+        navigation.push("Hashtag", { Tag: hashtag });
+    };
     const urls = [...thetext.matchAll(urlRE)];
     const previews = urls.map( (val, i) => {
         return <LinkPreview key={i} text={val[0]} 
@@ -285,7 +290,7 @@ export function Post(props) {
          })}
        </View>
        ) : <View />;
-    const text = props.text ? <MFM onClick={loadThread} text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
+    const text = props.text ? <MFM onClick={loadThread} onHashtagClicked={onHashtag} text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
     if (props.reply) {
         return (
           <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
@@ -299,16 +304,17 @@ export function Post(props) {
                     onProfileClick={props.onProfileClick}
                     content={props.content}
                 />
+            </Pressable>
                 {text}
                 {images}
                 {previews}
                 {reactions}
-            </Pressable>
           </View>
        );
     } else {
         return (
           <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
+          {hashtagModal}
          <Pressable onPress={loadThread}>
             <PostHeader author={props.author}
                 visibility={props.visibility}
@@ -318,16 +324,25 @@ export function Post(props) {
                 time={props.time}
                 myAccount={props.myAccount}
             />
+         </Pressable>
             {text}
             {images}
             {previews}
             {reactions}
-         </Pressable>
           </View>
        );
     }
 }
 
+export function UserList(props) {
+
+    return <FlatList
+           data={props.users}
+           renderItem={({item}) => <PostAuthor user={item} onProfileClick={props.onProfileClick} />}
+           ListHeaderComponent={<View><Text>Users of {props.tag}</Text></View>}
+           ListFooterComponent={<View><Button title="Load more" onPress={props.loadMore} /></View>}
+           />
+}
 export function PostList(props) {
     const posts = props.withBoosts ? props.posts : props.posts.filter((p) => {
         return p.text !== null;
