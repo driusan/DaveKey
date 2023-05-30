@@ -3,18 +3,18 @@ Improve styling of threads
 CWs when applicable
 Finish MFM implementation 
     - Mention - done
-    - Hashtag - needs onclick behaviour
+    - Hashtag - done
     - Link - done
-    - Custom emoji - done, needs testing
+    - Custom emoji - done
     - Bold - done
     - Italic - done
-    - Small - done, needs testing
+    - Small - done
     - Quote - done
     - center - done
     - code (inline) - done
     - code (block) - done
-    - Math (inline) - not done
-    - Math (block) - not done
+    - Math (inline) - done
+    - Math (block) - done
     - functions - not done
 Handle video embedded, not just images
 Render Polls

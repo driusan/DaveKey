@@ -6,6 +6,7 @@ import * as Linking from 'expo-linking';
 import { useAPI } from './api';
 // import { WebView } from 'react-native-webview';
 import AutoHeightWebView from 'react-native-autoheight-webview'
+import katex from 'katex';
 
 
 function loadProfile(account, username, host, profileNav) {
@@ -68,6 +69,11 @@ function node2HTML(callback, node) {
            return "<b>" + children + "</b>";
         case 'italic':
            return "<i>" + children + "</i>";
+        case 'mathInline':
+            console.log(node.props);
+           return "<span>" + katex.renderToString(node.props.formula, { throwOnError: false, output: 'mathml' }) + "</span>";
+        case 'mathBlock':
+           return "<div>" + katex.renderToString(node.props.formula, { throwOnError: false, output: 'mathml' }) + "</div>";
         case 'small':
            return "<small>" + children + "</small>";
         case 'quote':
