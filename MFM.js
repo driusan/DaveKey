@@ -148,6 +148,9 @@ function applyMFMfunc(callback, node) {
             bottomC + '% ' +
             leftC + '%)">'
             + content + '</span>';
+	case 'sparkle':
+		const id = Math.random() * 10001;
+        return '<span id="sparkle-' + id + '" style="display: inline-block" onclick="mksparkle(this);">' + content + '</span><script>mksparkle(document.getElementById("sparkle-' + id + '"));</script>';
     default:
         console.warn('unhandled fn ' + node.props.name);
         return '<span>' + content + '</span>';
@@ -437,6 +440,87 @@ function MFM2HTML(mfmTree, emojis) {
                 }
         }
     </style>
+	<template id="sparkle-star">
+	 <span style="display: inline-block; position: relative; border: thin solid black;">
+       <svg
+			style="position: absolute; top: -32px; left: -32px"
+			width=":width"
+			height=":height"
+			viewBox="0 0 :width :height"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				style="transform-origin: center; transform-box: fill-box"
+				transform="translate(0, 0)"
+				fill=":color"
+				d="M29.427,2.011C29.721,0.83 30.782,0 32,0C33.218,0 34.279,0.83 34.573,2.011L39.455,21.646C39.629,22.347 39.991,22.987 40.502,23.498C41.013,24.009 41.653,24.371 42.354,24.545L61.989,29.427C63.17,29.721 64,30.782 64,32C64,33.218 63.17,34.279 61.989,34.573L42.354,39.455C41.653,39.629 41.013,39.991 40.502,40.502C39.991,41.013 39.629,41.653 39.455,42.354L34.573,61.989C34.279,63.17 33.218,64 32,64C30.782,64 29.721,63.17 29.427,61.989L24.545,42.354C24.371,41.653 24.009,41.013 23.498,40.502C22.987,39.991 22.347,39.629 21.646,39.455L2.011,34.573C0.83,34.279 0,33.218 0,32C0,30.782 0.83,29.721 2.011,29.427L21.646,24.545C22.347,24.371 22.987,24.009 23.498,23.498C24.009,22.987 24.371,22.347 24.545,21.646L29.427,2.011Z"
+			>
+				<animateTransform
+					attributeName="transform"
+					attributeType="XML"
+					type="rotate"
+					from="0 0 0"
+					to="360 0 0"
+					dur="200ms"
+					repeatCount="1"
+					additive="sum"
+				/>
+				<animateTransform
+					attributeName="transform"
+					attributeType="XML"
+					type="scale"
+					values="0; 1; 0"
+					dur="200ms"
+					repeatCount="1"
+					additive="sum"
+				/> 
+			</path>
+		</svg>
+      </span>
+	</template>
+    <script>
+    function mksparkle(el) {
+	   const colors = ["#eb6f92", "#9ccfd8", "#f6c177", "#f6c177", "#f6c177"];
+	   const addStar = () => {
+		   const color = colors[Math.floor(Math.random() * colors.length)]
+		   const sizeFactor = Math.random();
+		   const size = 0.2 + (sizeFactor / 10) * 3; 
+		   const dur = 1000 + sizeFactor * 1000;
+		   const width = el.offsetWidth;
+		   const height = el.offsetHeight;
+		   const x = Math.random() * (width- 64);
+		   const y = Math.random() * (height- 64);
+
+		   const star = document.getElementById("sparkle-star").content.cloneNode(true);
+		   const path = star.querySelector('path');
+		   path.setAttribute('fill', color);
+		   path.setAttribute('transform', "translate(" + x + "," + y + ")");
+
+		   const svg = star.querySelector('svg'); // set width, height, viewbox
+		   const [rotateTransform, scaleTransform] = star.querySelectorAll("animateTransform");
+
+		   rotateTransform.setAttribute("dur", dur + "ms");
+		   scaleTransform.setAttribute("dur", dur + "ms");
+		   scaleTransform.setAttribute("values", "0; " + size + "; 0");
+		   svg.setAttribute("width", width);
+		   svg.setAttribute("height", height);
+		   svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+
+		   svg.style.position = "absolute";
+		   svg.style.left = el.offsetLeft;
+		   svg.style.top = el.offsetTop;
+		   el.parentNode.appendChild(svg);
+		   window.setTimeout(function() {
+			  el.parentNode.removeChild(svg);
+		   }, dur - 100);
+		   window.setTimeout(function() {
+			  addStar();
+		   },500 + Math.random() * 500);
+		
+	};
+	addStar();
+    }
+    </script>
     `;
     return '<body onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type: \'defaultclick\'})); return false;"}>' + animations + '<div>' + nodesAsHTML.join('') + "</div></body>";
 }

@@ -18,7 +18,11 @@ Finish MFM implementation
        - rotate (done)
        - position (done)
        - scale (done)
+       - fg.color (done)
+       - bg.color (done)
+       - crop (done)
        - <plain></plain> (done)
+       - sparkle (done)
 
        - spin
        - spin.left
@@ -30,17 +34,6 @@ Finish MFM implementation
        - spin.y,left
        - spin.y,alternate
        - spin.speed
-
-       - sparkle
-
-       - crop.top
-       - crop.bottom
-       - crop.left
-       - crop.right
-
-       - fg.color
-       - bg.color
-
 
 
 Handle video embedded, not just images
