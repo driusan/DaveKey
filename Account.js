@@ -36,11 +36,13 @@ export function useCalckeyAccount() {
           credentials: "omit",
           body: JSON.stringify({i: accessToken})
       }).then(
-        resp => {
-            if (!resp.ok) {
-                // throw new Error("Response code was " + resp.status);
+        async (resp) => {
+            const text = await resp.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error("Response code for " + url + " was " + resp.status + " could not parse " + text);
             }
-            return resp.json()
         }
       ).then( (json) => {
           if (json.error) {
@@ -95,15 +97,20 @@ export function useCalckeyAccount() {
           credentials: "omit",
           body: JSON.stringify(newParams)
         }).then(
-            (resp) => {
-                if (!resp.ok) {
-                    return resp.json();
-                    // throw new Error('Received status code ' + resp.status + ' for ' + endpoint);
+            async (resp) => {
+                const text = await resp.text();
+                try {
+                    const json = JSON.parse(text);
+                    if (!resp.ok) {
+                        throw new Error('Received status code ' + resp.status + ' for ' + endpoint + ': ' + json.error);
+                    }
+                    if (resp.status == 204) {
+                        return {};
+                    }
+                    return json;
+                } catch (e) {
+                    throw new Error('Received status code ' + resp.status + ' for ' + endpoint + ': ' + text);
                 }
-                if (resp.status == 204) {
-                    return {};
-                }
-                return resp.json();
             }
         ).then(
             (json) => {

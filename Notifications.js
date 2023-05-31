@@ -1,8 +1,10 @@
-import { SafeAreaView, FlatList, Text, View } from 'react-native';
+import { Image, SafeAreaView, FlatList, Text, View } from 'react-native';
+import * as mfm from 'mfm-js';
 import { FlatListPost, PostContext, PostAuthor } from './Posts';
 import { useRef, useEffect, useState } from 'react';
 import { useAPI } from './api';
 import { formatUsername} from './utils';
+import MFM from './MFM';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
@@ -64,7 +66,7 @@ async function getNotificationsBackground() {
       excludeTypes: [],
       limit: 3,
       unreadOnly: true,
-      markAsread: false,
+      markAsRead: false,
     };
     // avoid re-sending notifications that were sent on previous background
     // fetches but not yet read.
@@ -104,7 +106,7 @@ export function useNotifications() {
       });
       // console.log('Registering task');
       BackgroundFetch.registerTaskAsync(NOTIFICATION_TASK, {
-        minimumInterval: 1*60, // 1 minute
+        minimumInterval: 5*60, // 1 minute
         stopOnTerminate: false,
         startOnBoot: true,
         });
@@ -192,15 +194,15 @@ function scheduleNotification(obj) {
 
 export function NotificationsPage() {
     const api = useAPI();
-    const [notifications, setNotifications] = useState([]);
+    const [notifications, setNotifications] = useState(null);
     useEffect( () => {
         api.call("i/notifications", {
             excludeTypes: [],
             limit: 10,
             unreadOnly: false,
-            markAsread: false,
+            markAsRead: false,
         }).then( (json) => {
-            //console.log('got', json);
+            console.log('got', json);
             // FIXME: Other notification types
             // FIXME: Make background task
             /*
@@ -213,27 +215,19 @@ export function NotificationsPage() {
             */
             setNotifications(json);
         }).catch((e) => {
-            console.error(e);
+            console.error('error getting notifications', e);
         });
     }, []);
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [status, setStatus] = useState(null);
-
-  useEffect(() => {
-    checkStatusAsync();
-  }, []);
-
-  const checkStatusAsync = async () => {
-      const status = await BackgroundFetch.getStatusAsync();
-      const isRegistered = await TaskManager.isTaskRegisteredAsync(NOTIFICATION_TASK);
-      setStatus(status);
-      setIsRegistered(isRegistered);
-  };
-  console.log('notifs', notifications);
+    if (notifications === null) {
+        return (
+            <SafeAreaView style={{flex: 1}}>
+            <Text>Loading...</Text>
+            </SafeAreaView>
+        );
+    }
     return (
       <SafeAreaView style={{flex: 1}}>
-        <View><Text>Notification Status: {status} Registered: {isRegistered ? 'true' : 'false'}</Text></View>
-        <FlatList style={{flex: 1}} data={notifications}
+        <FlatList style={{flex: 1}} data={notifications || []}
           ItemSeparatorComponent={(e) => <View style={{borderBottomWidth: 2, borderColor: 'black', borderStyle: 'dotted', margin: 2}} />}
 
           renderItem={({item}) => <Notification notification={item} /> }
@@ -242,34 +236,70 @@ export function NotificationsPage() {
     );
 }
 
-function Notification(props) {
-    switch (props.notification.type) {
-    case 'reply':
-        return <FlatListPost post={props.notification.note} />;
-    case 'reaction':
-        return (
-          <View style={{flexDirection: 'column'}}>
-           <FlatListPost post={props.notification.note} noBorder={true}/>
-           <View style={{flexDirection: 'row'}}>
-              <Text>{props.notification.reaction} by </Text>
-              <PostAuthor user={props.notification.user} />
-           </View>
-        </View>
-        );
-    case 'followRequestAccepted':
-        return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
-    case 'follow':
-        return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Followed by </Text><PostAuthor user={props.notification.user} /></View>;
-    case 'mention':
-        return (
-          <View style={{flexDirection: 'column'}}>
-            <View style={{flexDirection: 'row', textAlign: 'center'}}>
-              <Text>Mentioned by </Text><PostAuthor user={props.notification.user} />
-            </View>
-            <FlatListPost post={props.notification.note} noBorder={true}/>
-          </View>
-        );
-    default:
-        return <View><Text>Unhandled notification type {props.notification.type}</Text></View>;
+function getReactionEmoji(name, emojis) {
+    if (name.startsWith(':') && name.endsWith(':')) {
+        const emojiname = name.substr(1, name.length-2);
+        console.log(emojiname, emojis);
+
+        for (const emoji of (emojis || [])) {
+            const ename = emoji.name.split('@');
+            if (ename[0] == emojiname) {
+                return <Image style={{width: 24, height: 24}} source={{ uri: emoji.url}} />
+            }
+        }
     }
+    return <Text style={{fontSize: 24}}>{name}</Text>;
+}
+
+function Notification(props) {
+    const getNotificationContent = (notif) => {
+        switch(notif.type) {
+        case 'mention': // fallthrough
+        case 'reply':
+            return <MFM text={notif.note.text} />;
+        case 'reaction':
+            if (notif.reaction.startsWith(':')) {
+                const mfmTree = mfm.parse(notif.reaction);
+                //console.warn(mfmTree);
+            }
+            const emoji = getReactionEmoji(notif.reaction, notif.note.reactionEmojis);
+            return <View style={{flexDirection: 'row'}}>
+                <View style={{maxWidth: 40, justifyContent: 'center', padding: 1}}>
+                    {emoji}
+                </View>
+                <MFM text={notif.note.text} />
+            </View>;
+        case 'followRequestAccepted':
+            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
+        case 'follow':
+            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Followed by </Text><PostAuthor user={props.notification.user} /></View>;
+        default:
+            return <Text>Unhandled notification type {notif.type}</Text>
+        }
+    }
+    const border = !props.notification.isRead ? <View style={{width: 10, backgroundColor: '#449999'}} /> : null;
+    return <View style={{flex: 1, flexDirection: 'row'}}>
+        {border}
+        <View style={{}}>
+            <View style={{flexDirection: 'column', padding: 5, flex: 1}}>
+               <View style={{paddingRight: 5}}>
+                 <Image style={{width: 40, height: 40}}
+                   source={{ uri: props.notification.user.avatarUrl}}
+                 />
+               </View>
+            </View>
+         </View>
+        <View style={{flex: 1}}>
+               <View>
+                 <Text numberOfLines={1}>{props.notification.user.name}</Text>
+               </View>
+               <View>
+                 <Text numberOfLines={1}>{formatUsername(props.notification.user)}</Text>
+               </View>
+        </View>
+        <View style={{flex: 8, flexDirection: 'column'}}>
+          <View style={{flex: 1, padding: 2}}><Text style={{fontWeight: 'bold', textAlign: 'center'}}>{props.notification.type}</Text></View>
+          <View style={{flex: 1}}>{getNotificationContent(props.notification)}</View>
+        </View>
+    </View>;
 }

@@ -184,7 +184,14 @@ function useTimeline(account, type) {
           credentials: "omit",
           body: JSON.stringify(params)
       }).then(
-        resp => {
+        async (resp) => {
+            const text = await resp.text();
+            try {
+                return JSON.parse(text);
+            } catch(e) {
+                throw new Error("Response code was " + resp.status + ' returned' + text);
+            }
+
             if (!resp.ok) {
                 // throw new Error("Response code was " + resp.status);
             }
