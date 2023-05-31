@@ -135,6 +135,8 @@ export function PostContext(props) {
         noteid={props.context.id}
         onProfileClick={props.onProfileClick}
         visibility={props.context.visibility}
+        emojis={props.context.emojis}
+        reactionEmojis={props.context.reactionEmojis}
       />
     </View>
   );
