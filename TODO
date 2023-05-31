@@ -1,41 +1,6 @@
 Fix Logout/Login
 Improve styling of threads
 CWs when applicable
-Finish MFM implementation 
-    - functions - not done
-       - flip (done)
-       - font (done)
-       - x2, x3, x4 (done)
-       - blur (done)
-       - jelly (done)
-       - tada (done)
-       - jump (done)
-       - bounce (done)
-       - shake (done)
-       - twitch (done)
-       - rainbow (done)
-       - fade (done)
-       - rotate (done)
-       - position (done)
-       - scale (done)
-       - fg.color (done)
-       - bg.color (done)
-       - crop (done)
-       - <plain></plain> (done)
-       - sparkle (done)
-
-       - spin
-       - spin.left
-       - spin.alternate
-       - spin.x
-       - spin.x,left
-       - spin.x,alternate
-       - spin.y
-       - spin.y,left
-       - spin.y,alternate
-       - spin.speed
-
-
 Handle video embedded, not just images
 Render Polls
 Notifications

@@ -149,8 +149,23 @@ function applyMFMfunc(callback, node) {
             leftC + '%)">'
             + content + '</span>';
 	case 'sparkle':
-		const id = Math.random() * 10001;
-        return '<span id="sparkle-' + id + '" style="display: inline-block" onclick="mksparkle(this);">' + content + '</span><script>mksparkle(document.getElementById("sparkle-' + id + '"));</script>';
+		const id = Math.random() * 10000;
+        return '<span id="sparkle-' + id + '" style="display: inline-block">' + content + '</span><script>mksparkle(document.getElementById("sparkle-' + id + '"));</script>';
+    case 'spin':
+        const speed = (node.props.args.speed || "1.5s")
+        let animation = 'mfm-spin';
+        if (node.props.args.x)  {
+            animation = 'mfm-spinX';
+        } else if (node.props.args.y) {
+            animation = 'mfm-spinY';
+        }
+        let direction = "normal";
+        if (node.props.args.alternate) {
+            direction = "alternate";
+        } else if (node.props.args.left) {
+            direction = "reverse";
+        }
+        return '<span style="display: inline-block; animation: ' + speed + ' linear 0s infinite ' + direction + ' none running ' + animation + ';">' + content + '</span>';
     default:
         console.warn('unhandled fn ' + node.props.name);
         return '<span>' + content + '</span>';
@@ -437,6 +452,29 @@ function MFM2HTML(mfmTree, emojis) {
                 }
                 to {
                         opacity: 1;
+                }
+        }
+        @keyframes mfm-spin {
+                0% {
+                        transform: rotate(0);
+                }
+                to {
+                        transform: rotate(360deg);
+                }
+        }
+        @keyframes mfm-spinX {
+                0% {
+                        transform: perspective(128px) rotateX(0);
+                }
+                to {
+                        transform: perspective(128px) rotateX(360deg);
+                }
+        }@keyframes mfm-spinY {
+                0% {
+                        transform: perspective(128px) rotateY(0);
+                }
+                to {
+                        transform: perspective(128px) rotateY(360deg);
                 }
         }
     </style>
