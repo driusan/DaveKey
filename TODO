@@ -7,18 +7,14 @@ Finish MFM implementation
        - font (done)
        - x2, x3, x4 (done)
        - blur (done)
-
-       - jelly
-       - jelly.speed
-
-       - tada
-       - tada.speed
-
-       - jump
-       - jump.speed
-
-       - bounce
-       - bounce.speed
+       - jelly (done)
+       - tada (done)
+       - jump (done)
+       - bounce (done)
+       - shake (done)
+       - twitch (done)
+       - rainbow (done)
+       - fade (done)
 
        - spin
        - spin.left
@@ -31,24 +27,11 @@ Finish MFM implementation
        - spin.y,alternate
        - spin.speed
 
-       - shake
-       - shake.speed
-
-       - twitch
-       - twitch.speed
-
-       - rainbow
-       - rainbow.speed
-
        - sparkle
 
        - rotate
        - rotate.deg
        - rotate.x,deg
-
-       - fade
-       - fade.out
-       - fade.speed
 
        - crop.top
        - crop.bottom
