@@ -114,6 +114,40 @@ function applyMFMfunc(callback, node) {
         return '<span style="display: inline-block; animation: ' + speed + ' linear 0s infinite ' + direction + ' none running mfm-fade;">' + content + '</span>';
 
     }
+    case 'rotate': {
+        const deg = (node.props.args.deg || "90")
+        if (node.props.args.x) {
+            return '<span style="display: inline-block; transform-origin: center center; transform: perspective(128px) rotateX(' + deg + 'deg)">' + content + '</span>';
+        }
+        return '<span style="display: inline-block; transform-origin: center center; transform: rotate(' + deg + 'deg)">' + content + '</span>';
+    }
+    case 'position': {
+        const x = node.props.args.x || "0";
+        const y = node.props.args.y || "0";
+
+        return '<span style="display: inline-block; transform: translateX(' + x + 'em) translateY(' + y + 'em)">' + content + '</span>';
+    }
+    case 'scale': {
+        const x = node.props.args.x || "1";
+        const y = node.props.args.y || "1";
+
+        return '<span style="display: inline-block; transform: scale(' + x + ',' + y + ')">' + content + '</span>';
+    }
+    case 'fg':
+        return '<span style="display: inline-block; color: #' + node.props.args.color + '">' + content + '</span>';
+    case 'bg':
+        return '<span style="display: inline-block; background-color: #' + node.props.args.color + '">' + content + '</span>';
+    case 'crop':
+        const topC = node.props.args.top || "0";
+        const rightC = node.props.args.right || "0";
+        const bottomC = node.props.args.bottom || "0";
+        const leftC = node.props.args.left || "0";
+        return '<span style="display: inline-block; clip-path: inset(' +
+            topC + '% ' +
+            rightC + '% ' +
+            bottomC + '% ' +
+            leftC + '%)">'
+            + content + '</span>';
     default:
         console.warn('unhandled fn ' + node.props.name);
         return '<span>' + content + '</span>';
@@ -166,9 +200,11 @@ function node2HTML(callback, node) {
           return "<center>" +children + "</center>";
       case 'fn':
           return applyMFMfunc(callback, node);
-        default:
-            console.warn(node.type + ' not implemented');
-            return '<div>' + node.type + ' Not Implemented</div>'
+      case 'plain':
+         return '<span>' + children + '</span>';
+      default:
+         console.warn(node.type + ' not implemented');
+         return '<div>' + node.type + ' Not Implemented</div>'
         }
     }
 function MFM2HTML(mfmTree, emojis) {

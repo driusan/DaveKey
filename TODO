@@ -15,6 +15,10 @@ Finish MFM implementation
        - twitch (done)
        - rainbow (done)
        - fade (done)
+       - rotate (done)
+       - position (done)
+       - scale (done)
+       - <plain></plain> (done)
 
        - spin
        - spin.left
@@ -29,25 +33,14 @@ Finish MFM implementation
 
        - sparkle
 
-       - rotate
-       - rotate.deg
-       - rotate.x,deg
-
        - crop.top
        - crop.bottom
        - crop.left
        - crop.right
 
-       - position.x
-       - position.y
-
-       - scale.x
-       - scale.y
-
        - fg.color
        - bg.color
 
-       - <plain>xxx</plain>
 
 
 Handle video embedded, not just images
