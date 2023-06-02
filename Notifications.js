@@ -1,9 +1,10 @@
-import { Image, SafeAreaView, FlatList, Text, View } from 'react-native';
+import { Pressable, Image, SafeAreaView, FlatList, Text, View } from 'react-native';
 import * as mfm from 'mfm-js';
 import { FlatListPost, PostContext, PostAuthor } from './Posts';
 import { useRef, useEffect, useState } from 'react';
 import { useAPI } from './api';
 import { formatUsername} from './utils';
+import { useNavigation } from '@react-navigation/native';
 import MFM from './MFM';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -252,11 +253,16 @@ function getReactionEmoji(name, emojis) {
 }
 
 function Notification(props) {
+    const navigation = useNavigation();
+    const navigateTo = (id) => {
+        navigation.navigate("Thread", { PostId: id});
+    }
     const getNotificationContent = (notif) => {
         switch(notif.type) {
         case 'mention': // fallthrough
+        case 'renote': // fallthrough
         case 'reply':
-            return <MFM text={notif.note.text} />;
+            return <Pressable onPress={() => navigateTo(notif.note.id)}><MFM onClick={()=>navigateTo(notif.note.id)} text={notif.note.text} /></Pressable>;
         case 'reaction':
             if (notif.reaction.startsWith(':')) {
                 const mfmTree = mfm.parse(notif.reaction);
@@ -267,7 +273,7 @@ function Notification(props) {
                 <View style={{maxWidth: 40, justifyContent: 'center', padding: 1}}>
                     {emoji}
                 </View>
-                <MFM text={notif.note.text} />
+                <MFM onClick={() => navigateTo(notif.note.id)} text={notif.note.text} />
             </View>;
         case 'followRequestAccepted':
             return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
