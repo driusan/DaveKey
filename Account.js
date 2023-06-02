@@ -98,14 +98,14 @@ export function useCalckeyAccount() {
           body: JSON.stringify(newParams)
         }).then(
             async (resp) => {
+                if (resp.status == 204) {
+                    return {};
+                }
                 const text = await resp.text();
                 try {
                     const json = JSON.parse(text);
                     if (!resp.ok) {
-                        throw new Error('Received status code ' + resp.status + ' for ' + endpoint + ': ' + json.error);
-                    }
-                    if (resp.status == 204) {
-                        return {};
+                        throw new Error('Received status code ' + resp.status + ' for ' + endpoint + ': ' + (json ? json.error : text));
                     }
                     return json;
                 } catch (e) {
@@ -115,11 +115,10 @@ export function useCalckeyAccount() {
         ).then(
             (json) => {
                 if (json.error) {
-                    console.log(json.error);
                     throw new Error(json.error);
                 }
                 return json;
-        });;
+        });
     }
   };
 }

@@ -13,6 +13,35 @@ import { ServerContext} from './contexts';
 import { useAPI } from './api';
 
 
+function Poll({choices, noteid}) {
+    const api = useAPI();
+    const choicesViews = choices.map( (option, i) => {
+        console.log(option);
+        const textStyle = option.isVoted ? { fontWeight: 'bold'} : {};
+        return (
+          <View style={{borderWidth: 1, padding: 5, margin: 2}}
+            key={option.text}>
+            <Pressable onPress={() => {
+                console.log(i, noteid);
+                api.call("notes/polls/vote", {noteId: noteid, choice: i}).then(
+                    () => {
+                        Alert.alert("Voted", "Voted for " + option.text);
+                    }
+                ).catch( (e) => {
+                    console.error(e);
+                    Alert.alert('Could not vote', '' + e);
+                });
+            }}>
+              <Text style={textStyle}>{option.text} (Votes: {option.votes})</Text>
+            </Pressable>
+          </View>
+        );
+    });
+    return <View style={{
+        flexDirection: 'column',
+        margin: 10,
+    }}>{choicesViews}</View>;
+}
 
 // import RelativeTime from '@yaireo/relative-time'
 
@@ -293,6 +322,7 @@ export function Post(props) {
        </View>
        ) : <View />;
     const text = props.text ? <MFM onClick={loadThread} onHashtagClicked={onHashtag} text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
+    const poll = props.content.poll ? <Poll choices={props.content.poll.choices} expiresAt={props.content.poll.expiresAt} multiple={props.content.poll.multiple} noteid={props.noteid} /> : null;
     if (props.reply) {
         return (
           <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
@@ -328,6 +358,7 @@ export function Post(props) {
             />
          </Pressable>
             {text}
+            {poll}
             {images}
             {previews}
             {reactions}

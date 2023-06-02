@@ -2,7 +2,6 @@ Fix Logout/Login
 Improve styling of threads
 CWs when applicable
 Handle video embedded, not just images
-Render Polls
 Notifications
     - actions (reply/like) in notification
 Antennas
