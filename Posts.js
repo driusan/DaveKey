@@ -1,6 +1,6 @@
 import MFM from './MFM';
 import { FlatList, StyleSheet, Pressable, Text, TextInput, View, Image, Button, Alert, Modal } from 'react-native';
-import { useContext, useCallback, useState } from 'react';
+import { useRef, useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
@@ -11,12 +11,13 @@ import * as Linking from 'expo-linking';
 import { AccountContext} from './Account';
 import { ServerContext} from './contexts';
 import { useAPI } from './api';
+import { Video, ResizeMode } from 'expo-av';
 
 
 function Poll({choices, noteid}) {
     const api = useAPI();
     const choicesViews = choices.map( (option, i) => {
-        console.log(option);
+        // console.log(option);
         const textStyle = option.isVoted ? { fontWeight: 'bold'} : {};
         return (
           <View style={{borderWidth: 1, padding: 5, margin: 2}}
@@ -278,15 +279,32 @@ export function Post(props) {
     const images = props.content.files ? (
       <View>
       {props.content.files.map((file, i) => {
-        const height = file.properties.height > 400 ? 400 : file.properties.height;
-        return <Image key={i}
+
+        if (file.type.startsWith('video/')) {
+            // console.log('file', file, status);
+            return <Video
+                key={i}
+                style={{flex: 1, height: 400}}
+                source={{uri: file.url}}
+                useNativeControls
+                shouldPlay={true}
+                resizeMode={ResizeMode.CONTAIN}
+                isLooping
+            />;
+            return <View key={i}><Text>Unhandled vodeo type {file.type}</Text></View>;
+        } else if (file.type.startsWith('image/')) {
+            const height = file.properties.height > 400 ? 400 : file.properties.height;
+            return <Image key={i}
                  source={{ uri: file.url}}
                  height={height}
                  resizeMode={'contain'}
                  resizeMethod={'resize'}
-               />;
-        })}
-      </View> ): <View />;
+           />;
+        } else {
+            return <View key={i}><Text>Unhandled attachment type {file.type}</Text></View>;
+        }
+      })}
+      </View>) : <View />;
     const reactions = props.content.reactions && Object.keys(props.content.reactions).length > 0 ? (
        <View style={{marginTop: 15, paddingTop: 5, borderStyle: 'dotted', borderTopColor: 'green', borderTopWidth: 2, flexDirection: 'row', flexWrap: 'wrap'}}>
          {Object.keys(props.content.reactions).map((val) => {
