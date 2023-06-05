@@ -177,19 +177,20 @@ function scheduleNotification(obj) {
   case 'mention':
     Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Mentioned by by ' + formatUsername(obj.user),
+        title: 'Mentioned by ' + formatUsername(obj.user),
         body: obj.note.text,
         data: {
           notificationId: obj.id,
           noteId: obj.note.id,
           url: "calckey://notes/" + obj.user.id,
-        }
+        },
+        categoryIdentifier: "mention",
       },
       trigger: null,
     });
     break;
   default:
-    console.log(obj.type);
+    console.log('unhandled notification type', obj.type);
   }
 }
 
@@ -240,7 +241,7 @@ export function NotificationsPage() {
 function getReactionEmoji(name, emojis) {
     if (name.startsWith(':') && name.endsWith(':')) {
         const emojiname = name.substr(1, name.length-2);
-        console.log(emojiname, emojis);
+        //console.log(emojiname, emojis);
 
         for (const emoji of (emojis || [])) {
             const ename = emoji.name.split('@');
@@ -260,6 +261,7 @@ function Notification(props) {
     const getNotificationContent = (notif) => {
         switch(notif.type) {
         case 'mention': // fallthrough
+            //console.log(notif);
         case 'renote': // fallthrough
         case 'reply':
             return <Pressable onPress={() => navigateTo(notif.note.id)}><MFM onClick={()=>navigateTo(notif.note.id)} text={notif.note.text} /></Pressable>;
@@ -276,31 +278,48 @@ function Notification(props) {
                 <MFM onClick={() => navigateTo(notif.note.id)} text={notif.note.text} />
             </View>;
         case 'followRequestAccepted':
+        if (!props.notification.user) {
+            console.log('wtf1');
+        }
             return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
         case 'follow':
+        if (!props.notification.user) {
+            console.log('wtf2');
+        }
             return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Followed by </Text><PostAuthor user={props.notification.user} /></View>;
+        case 'pollVote':
+        if (!props.notification.user) {
+            console.log('wtf3');
+        }
+            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>{props.notification.user.name} voted in your poll.</Text></View>;
+        case 'pollEnded':
+            return <View style={{flexDirection: 'column', textAlign: 'center'}}><Text>A poll you voted in has ended.</Text>
+                <MFM onClick={() => navigateTo(notif.note.id)} text={notif.note.text} />
+            </View>;
         default:
             return <Text>Unhandled notification type {notif.type}</Text>
         }
     }
     const border = !props.notification.isRead ? <View style={{width: 10, backgroundColor: '#449999'}} /> : null;
+    const user = props.notification.user || props.notification.note.user;
     return <View style={{flex: 1, flexDirection: 'row'}}>
         {border}
         <View style={{}}>
             <View style={{flexDirection: 'column', padding: 5, flex: 1}}>
                <View style={{paddingRight: 5}}>
+               {user ? 
                  <Image style={{width: 40, height: 40}}
-                   source={{ uri: props.notification.user.avatarUrl}}
-                 />
+                   source={{ uri: user.avatarUrl}}
+                 /> : <View style={{width: 40, height: 40}}><Text style={{fontSize: 36}}>?</Text></View> }
                </View>
             </View>
          </View>
         <View style={{flex: 1}}>
                <View>
-                 <Text numberOfLines={1}>{props.notification.user.name}</Text>
+                 <Text numberOfLines={1}>{ user ? user.name : 'Unknown user'}</Text>
                </View>
                <View>
-                 <Text numberOfLines={1}>{formatUsername(props.notification.user)}</Text>
+                 <Text numberOfLines={1}>{user ? formatUsername(user) : '??'}</Text>
                </View>
         </View>
         <View style={{flex: 8, flexDirection: 'column'}}>
