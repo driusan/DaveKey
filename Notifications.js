@@ -13,6 +13,52 @@ import * as BackgroundFetch from 'expo-background-fetch';
 
 const NOTIFICATION_TASK = 'notification-fetch';
 
+// can't useAPI in notifications, need to duplicate
+// the logic from Account.js
+async function backgroundAPI(endpoint, params) {
+    let instance;
+    let i;
+    const vals = await AsyncStorage.multiGet(['@i', '@instance']);
+    for(const obj of vals) {
+        const [key, val] = obj;
+        switch (key) {
+            case '@instance': instance = val; break;
+            case '@i': i = val; break;
+        }
+    }
+    if (!instance || !i) {
+        console.warn('No credentials for API call.');
+        return;
+    }
+    if (!instance) {
+        throw new Error('No instance');
+    }
+    const url = 'https://' + instance + '/api/' + endpoint;
+    const newParams = {
+      i: i, 
+      ...params,
+    };
+    console.log('background api', url);
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: "omit",
+        body: JSON.stringify(newParams)
+    }).then( async resp => {
+        if (resp.status == 204) {
+            return {};
+        }
+        if (!resp.ok) {
+            const text = await resp.text();
+            throw new Error('Status ' + resp.status + ':' + text);
+        }
+        resp.json()
+    });
+}
+
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
         shouldShowAlert: true,
@@ -93,28 +139,118 @@ async function getNotificationsBackground() {
         });
 };
 
+Notifications.addNotificationResponseReceivedListener(response => {
+  // const api = useAPI();
+  const content = response.notification.request.content;
+  console.log('clicked notification', response, content);
+
+  console.log('notification type: ' + content.categoryIdentifier);
+  switch (content.categoryIdentifier) {
+  case 'mention': // fallthrough
+  case 'reply':
+    switch(response.actionIdentifier) {
+    case 'like':
+      console.log('action type: like');
+      // FIXME: need access to server.defaultReaction
+      backgroundAPI("notes/reactions/create", {
+        noteId: content.data.noteId,
+        reaction: '⭐'
+      }).then ( (json) => {
+        console.log(json);
+      }).catch( (e) => console.warn(e));
+      break;
+    case 'boost':
+      backgroundAPI("notes/create", {
+        renoteId: content.data.noteId,
+        visibility: 'public',
+      }).then ( (json) => {
+        console.log(json);
+      });
+      break;
+    case 'reply':
+      console.log('action type: reply');
+      backgroundAPI("notes/create", {
+        text: response.userText,
+        poll: null,
+        localOnly: false,
+        visibility: content.data.visibility,
+        replyId: content.data.noteId,
+        visibileUserIds: content.data.visibleUserIds,
+      }).then ( (json) => {
+        Notifications.dismissNotificationAsync(response.notification.request.identifier);
+      });
+      break;
+    default:
+      console.log('unhandled action', response.actionIdentifier);
+    }
+    break;
+  default:
+    console.log('Unhandled notification category' + content.categoryIdentifier);
+  }
+});
+
+BackgroundFetch.registerTaskAsync(NOTIFICATION_TASK, {
+  minimumInterval: 1*60, // 1 minute
+  stopOnTerminate: false,
+  startOnBoot: true,
+});
+
 export function useNotifications() {
-    const notificationListener = useRef();
-    const responseListener = useRef();
-
     useEffect(() => {
-      notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-         // console.log(notification);
-      });
-
-      responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-         console.log('clicked notification', response, response.notification.request.content);
-      });
-      // console.log('Registering task');
-      BackgroundFetch.registerTaskAsync(NOTIFICATION_TASK, {
-        minimumInterval: 5*60, // 1 minute
-        stopOnTerminate: false,
-        startOnBoot: true,
-        });
-
+      Notifications.setNotificationCategoryAsync('reply', [
+        {
+          buttonTitle: 'Reply',
+          identifier: 'reply',
+          textInput: {
+            submitButtonTitle: 'Send Reply',
+          },
+          options: {
+            opensAppToForeground: false,
+          },
+        },
+        {
+          buttonTitle: `Like`,
+          identifier: 'like',
+          options: {
+            opensAppToForeground: false,
+          },
+        },
+        {
+          buttonTitle: 'Boost',
+          identifier: 'boost',
+          options: {
+            opensAppToForeground: false,
+          },
+        },
+      ]);
+      Notifications.setNotificationCategoryAsync('mention', [
+        {
+          buttonTitle: 'Reply',
+          identifier: 'reply',
+          textInput: {
+            submitButtonTitle: 'Send Reply',
+          },
+          options: {
+            opensAppToForeground: false,
+          },
+        },
+        {
+          buttonTitle: `Like`,
+          identifier: 'like',
+          options: {
+            opensAppToForeground: false,
+          },
+        },
+        {
+          buttonTitle: 'Boost',
+          identifier: 'boost',
+          options: {
+            opensAppToForeground: false,
+          },
+        },
+      ]);
       return () => {
-        Notifications.removeNotificationSubscription(notificationListener.current);
-        Notifications.removeNotificationSubscription(responseListener.current);
+        // Notifications.removeNotificationSubscription(notificationListener.current);
         // BackgroundFetch.unregisterTaskAsync(NOTIFICATION_TASK);
       }
     }, []);
@@ -137,13 +273,14 @@ function scheduleNotification(obj) {
     });
     break;
   case 'followRequestAccepted':
+    // open profile? 
     Notifications.scheduleNotificationAsync({
       content: {
         title: formatUsername(obj.user) + ' follow request accepted',
         data: {
           notificationId: obj.id,
           url: "calckey://profiles/" + obj.user.id,
-        }
+        },
       },
       trigger: null,
     });
@@ -157,19 +294,24 @@ function scheduleNotification(obj) {
           notificationId: obj.id,
           noteId: obj.note.id,
           url: "calckey://notes/" + obj.note.id,
-        }
+          visibility: obj.note.visibility,
+          visibileUserIds: obj.note.visibleUserIds,
+        },
+        categoryIdentifier: "reply",
       },
       trigger: null,
     });
     break;
   case 'follow':
+    // open profile? follow back?
     Notifications.scheduleNotificationAsync({
       content: {
         title: 'Followed by ' + formatUsername(obj.user),
         data: {
           notificationId: obj.id,
           url: "calckey://profiles/" + obj.user.id,
-        }
+        },
+
       },
       trigger: null,
     });
@@ -183,6 +325,8 @@ function scheduleNotification(obj) {
           notificationId: obj.id,
           noteId: obj.note.id,
           url: "calckey://notes/" + obj.user.id,
+          visibility: obj.note.visibility,
+          visibileUserIds: obj.note.visibleUserIds,
         },
         categoryIdentifier: "mention",
       },
@@ -204,15 +348,16 @@ export function NotificationsPage() {
             unreadOnly: false,
             markAsRead: false,
         }).then( (json) => {
-            console.log('got', json);
-            // FIXME: Other notification types
-            // FIXME: Make background task
+            // console.log('got', json);
+            let i = 0;
             /*
             for (obj of json) {
-                if (obj.isRead) {
-                    continue;
+                if (obj.type == 'mention' || obj.type == 'reply') {
+                    if (i < 3) {
+                        scheduleNotification(obj);
+                    }
+                    i++;
                 }
-                scheduleNotification(obj);
             }
             */
             setNotifications(json);
@@ -283,14 +428,8 @@ function Notification(props) {
         }
             return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
         case 'follow':
-        if (!props.notification.user) {
-            console.log('wtf2');
-        }
             return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Followed by </Text><PostAuthor user={props.notification.user} /></View>;
         case 'pollVote':
-        if (!props.notification.user) {
-            console.log('wtf3');
-        }
             return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>{props.notification.user.name} voted in your poll.</Text></View>;
         case 'pollEnded':
             return <View style={{flexDirection: 'column', textAlign: 'center'}}><Text>A poll you voted in has ended.</Text>

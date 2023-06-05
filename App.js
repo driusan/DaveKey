@@ -323,7 +323,9 @@ export default function App() {
               const subscription = Notifications.addNotificationResponseReceivedListener(response => {
                 const url = response.notification.request.content.data.url;
                 // Let React Navigation handle the URL
-                listener(url);
+                if (response.actionIdentifier == 'expo.modules.notifications.actions.DEFAULT') {
+                    listener(url);
+                }
               });
             }
         }}>
