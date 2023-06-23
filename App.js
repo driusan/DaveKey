@@ -449,6 +449,8 @@ function Timeline({navigation, route}) {
            refreshControl={refreshControl}
            stickyHeaderIndices={[0]}
            stickyHeaderHiddenOnScroll={true}
+           onEndReached={timeline.moreAfter}
+           onEndReachedThreshold={0.7}
         />
         <View style={{position: 'absolute', bottom: 50, right: 50}}><Pressable onPress={() => setPostModalVisible(true)}><AntDesign name="pluscircle" size={48} color="green" /></Pressable></View>
      <StatusBar style="dark" />
