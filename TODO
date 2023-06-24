@@ -1,8 +1,13 @@
 Fix Logout/Login
 Improve styling of threads
+    - fix order
+    - fix notification
+    - scroll to post on thread load
 CWs when applicable
 Add refresh icon in header
 Notifications
     - actions (reply/like) in notification
 Antennas
 Hashtag - search for users
+Images - click to expand
+WebSocket subscription 

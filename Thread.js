@@ -49,6 +49,7 @@ export function RenderThread(props) {
        <View style={{flex: 1}}>
           <PostModal show={replyTo != null} replyTo={replyTo} onClose={() => setReplyTo(null)} />
           <ConversationContext onProfileClick={props.onProfileClick} posts={conversation} />
+          <View style={{flex: 1, borderColor: '#0af', borderWidth: 4}}>
           <Post uri={displayedPost.uri}
             text={displayedPost.text} 
             time={displayedPost.createdAt}
@@ -60,6 +61,7 @@ export function RenderThread(props) {
             reactionEmojis={displayedPost.reactionEmojis}
             onProfileClick={props.onProfileClick}
           />
+          </View>
           <ConversationContext onProfileClick={props.onProfileClick} doReply={setReplyTo} posts={children} />
        </View>
     );
