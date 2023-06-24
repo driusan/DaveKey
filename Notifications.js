@@ -324,7 +324,7 @@ function scheduleNotification(obj) {
         data: {
           notificationId: obj.id,
           noteId: obj.note.id,
-          url: "calckey://notes/" + obj.user.id,
+          url: "calckey://notes/" + obj.note.id,
           visibility: obj.note.visibility,
           visibileUserIds: obj.note.visibleUserIds,
         },
