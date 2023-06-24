@@ -4,7 +4,7 @@ import { FlatListPost, PostContext, PostAuthor } from './Posts';
 import { useRef, useEffect, useState } from 'react';
 import { useAPI } from './api';
 import { formatUsername} from './utils';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useTheme } from '@react-navigation/native';
 import MFM from './MFM';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -340,6 +340,7 @@ function scheduleNotification(obj) {
 
 export function NotificationsPage() {
     const api = useAPI();
+    const theme = useTheme().colors;
     const [notifications, setNotifications] = useState(null);
     useEffect( () => {
         api.call("i/notifications", {
@@ -375,7 +376,7 @@ export function NotificationsPage() {
     return (
       <SafeAreaView style={{flex: 1}}>
         <FlatList style={{flex: 1}} data={notifications || []}
-          ItemSeparatorComponent={(e) => <View style={{borderBottomWidth: 2, borderColor: 'black', borderStyle: 'dotted', margin: 2}} />}
+          ItemSeparatorComponent={(e) => <View style={{borderBottomWidth: 2, borderColor: theme.border, borderStyle: 'dotted', margin: 2}} />}
 
           renderItem={({item}) => <Notification notification={item} /> }
           />
@@ -400,14 +401,16 @@ function getReactionEmoji(name, emojis) {
 
 function Notification(props) {
     const navigation = useNavigation();
+    const theme = useTheme().colors;
     const navigateTo = (id) => {
         navigation.navigate("Thread", { PostId: id});
     }
     const getNotificationContent = (notif) => {
         switch(notif.type) {
+        case 'renote': 
+            return <Pressable onPress={() => navigateTo(notif.note.renote.id)}><MFM onClick={()=>navigateTo(notif.note.renote.id)} text={notif.note.renote.text} /></Pressable>;
         case 'mention': // fallthrough
             //console.log(notif);
-        case 'renote': // fallthrough
         case 'reply':
             return <Pressable onPress={() => navigateTo(notif.note.id)}><MFM onClick={()=>navigateTo(notif.note.id)} text={notif.note.text} /></Pressable>;
         case 'reaction':
@@ -426,22 +429,22 @@ function Notification(props) {
         if (!props.notification.user) {
             console.log('wtf1');
         }
-            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
+            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text style={{color: theme.text}}>Follow request accepted from </Text><PostAuthor user={props.notification.user} /></View>;
         case 'follow':
-            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>Followed by </Text><PostAuthor user={props.notification.user} /></View>;
+            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text style={{color: theme.text}}>Followed by </Text><PostAuthor user={props.notification.user} /></View>;
         case 'pollVote':
-            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text>{props.notification.user.name} voted in your poll.</Text></View>;
+            return <View style={{flexDirection: 'row', textAlign: 'center'}}><Text style={{color: theme.text}}>{props.notification.user.name} voted in your poll.</Text></View>;
         case 'pollEnded':
-            return <View style={{flexDirection: 'column', textAlign: 'center'}}><Text>A poll you voted in has ended.</Text>
+            return <View style={{flexDirection: 'column', textAlign: 'center'}}><Text style={{color: theme.text}}>A poll you voted in has ended.</Text>
                 <MFM onClick={() => navigateTo(notif.note.id)} text={notif.note.text} />
             </View>;
         default:
-            return <Text>Unhandled notification type {notif.type}</Text>
+            return <Text style={{color: theme.text}}>Unhandled notification type {notif.type}</Text>
         }
     }
-    const border = !props.notification.isRead ? <View style={{width: 10, backgroundColor: '#449999'}} /> : null;
+    const border = !props.notification.isRead ? <View style={{width: 10, backgroundColor: theme.border}} /> : null;
     const user = props.notification.user || props.notification.note.user;
-    return <View style={{flex: 1, flexDirection: 'row'}}>
+    return <View style={{flex: 1, flexDirection: 'row', backgroundColor: theme.card}}>
         {border}
         <View style={{}}>
             <View style={{flexDirection: 'column', padding: 5, flex: 1}}>
@@ -449,20 +452,20 @@ function Notification(props) {
                {user ? 
                  <Image style={{width: 40, height: 40}}
                    source={{ uri: user.avatarUrl}}
-                 /> : <View style={{width: 40, height: 40}}><Text style={{fontSize: 36}}>?</Text></View> }
+                 /> : <View style={{width: 40, height: 40}}><Text style={{fontSize: 36, color: theme.text}}>?</Text></View> }
                </View>
             </View>
          </View>
         <View style={{flex: 1}}>
                <View>
-                 <Text numberOfLines={1}>{ user ? user.name : 'Unknown user'}</Text>
+                 <Text style={{color: theme.text}}numberOfLines={1}>{ user ? user.name : 'Unknown user'}</Text>
                </View>
                <View>
-                 <Text numberOfLines={1}>{user ? formatUsername(user) : '??'}</Text>
+                 <Text style={{color: theme.text}}numberOfLines={1}>{user ? formatUsername(user) : '??'}</Text>
                </View>
         </View>
         <View style={{flex: 8, flexDirection: 'column'}}>
-          <View style={{flex: 1, padding: 2}}><Text style={{fontWeight: 'bold', textAlign: 'center'}}>{props.notification.type}</Text></View>
+          <View style={{flex: 1, padding: 2}}><Text style={{color: theme.text, fontWeight: 'bold', textAlign: 'center'}}>{props.notification.type}</Text></View>
           <View style={{flex: 1}}>{getNotificationContent(props.notification)}</View>
         </View>
     </View>;

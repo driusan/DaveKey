@@ -1,6 +1,5 @@
-// import 'react-native-gesture-handler';
-
-import { Linking } from 'react-native';
+import { DrawerActions } from '@react-navigation/native';
+import { Linking, useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
@@ -10,7 +9,7 @@ import { FlatListPost, PostModal, UserList } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer, getStateFromPath, getPathFromState } from '@react-navigation/native';
+import { useNavigation, NavigationContainer, DefaultTheme, DarkTheme, useTheme} from '@react-navigation/native';
 import { AccountContext, useCalckeyAccount} from './Account';
 import { MyProfile, OtherProfile } from './Profile';
 import {Thread} from './Thread';
@@ -80,11 +79,26 @@ function Logout({navigation}) {
 
 function ActionsDrawer() {
       const account = useContext(AccountContext);
+      const navigation = useNavigation();
+      const theme = useTheme().colors;
       const name = account.mentionName();
       const profileLink = null; /* name == '' ? null :
         <Drawer.Screen name={account.mentionName()} component={MyProfile} />; */
       return (
-          <Drawer.Navigator screenOptions={{}}>
+          <Drawer.Navigator 
+              id="drawer" 
+              screenOptions={{
+              headerLeft: () => {
+                  const onPress = () => navigation.dispatch(DrawerActions.openDrawer());
+                  return (
+                    <View>
+                        <Pressable onPress={onPress}>
+                          <AntDesign name="bars" size={36} color={theme.text} />
+                        </Pressable>
+                    </View>
+                  );
+              }
+              }}>
               {profileLink}
               <Drawer.Screen name="Home" component={ActionsStack} />
               <Drawer.Screen name="Notifications" component={NotificationsPage} />
@@ -242,48 +256,53 @@ function useTimeline(account, type) {
 }
 
 function BoostSelect(props) {
+    const theme = useTheme().colors;
+
     return (
-      <View style={styles.timelineContainer}>
-             <Pressable onPress={() => props.setWithBoosts(true)}
-                         style={props.withBoosts ? {...styles.timelineItem, backgroundColor: '#ddd'} : styles.timelineItem}
-             >
-               <Text style={styles.timelineText}>Boosts</Text>
+      <View style={[styles.timelineContainer, {backgroundColor: theme.background}]}>
+             <Pressable onPress={() => props.setWithBoosts(true)} style={[styles.timelineItem, {backgroundColor: theme.card}]}>
+               <Text style={[styles.timelineText, {color: theme.text, fontWeight: props.withBoosts ? 'bold' : 'normal'}]
+               }>Boosts</Text>
              </Pressable>
-             <Pressable onPress={() => props.setWithBoosts(false)}
-                        style={!props.withBoosts ? {...styles.timelineItem, backgroundColor: '#ddd'} : styles.timelineItem}
-             >
-               <Text style={styles.timelineText}>No Boosts</Text>
+             <Pressable onPress={() => props.setWithBoosts(false)} style={[styles.timelineItem, {backgroundColor: theme.card}]}>
+               <Text style={[styles.timelineText, {color: theme.text, fontWeight: props.withBoosts ? 'normal' : 'bold'}]}>No Boosts</Text>
              </Pressable>
       </View>
    );
 }
 
-function TimelineSelect(props) {
-    // global, home, hybrid, recommended
-    const icon = (display, icon, active) => {
-        const style = display == active ?
-            {...styles.timelineItem, backgroundColor: '#ddd'}
-            : styles.timelineItem;
-        return (
-          <Pressable onPress={() => props.onChange(display)}
-                     style={style}
-          >
-            <Text style={styles.timelineText}>{icon}</Text>
-          </Pressable>
-        );
+function GetToken() {
+    return <Stack.Navigator>
+        <Stack.Screen name="Login" component={KeyAccessTokenScreen} />
+    </Stack.Navigator>;
+}
+function KeyAccessTokenScreen() {
+  const account = useContext(AccountContext);
+      return <GetAccessToken 
+        onSuccess={(i, instance) => {
+            console.log('logging in', i, instance);
+            account.login(i, instance);
+        }}
+      />;
+}
+
+function getTheme(dark) {
+    if (dark) {
+        return {
+            dark: true,
+            colors: {
+                ...DarkTheme.colors,
+                card: 'rgb(40, 40, 40)',
+            }
+        };
+    } else {
+        return DefaultTheme
     }
-    return (
-      <View style={styles.timelineContainer}>
-        {icon('global',  '🌐', props.active)}
-        {icon('local', '🏠', props.active)}
-        {icon('hybrid', '💑', props.active)}
-        {icon('recommended', '🌟', props.active)}
-      </View>
-    );
 }
 
 export default function App() {
     const account = useCalckeyAccount();
+    const theme = useColorScheme();
     useNotifications();
     const [serverMeta, setServerMeta] = useState(null);
     useEffect( () => {
@@ -300,7 +319,9 @@ export default function App() {
       <AccountContext.Provider value={account}>
       <ServerContext.Provider value={serverMeta}>
       <MenuProvider style={{flex: 1}}>
-        <NavigationContainer linking={{
+        <NavigationContainer
+           theme={getTheme(theme=='dark')}
+           linking={{
             prefixes: ['calckey://'],
             config: {
                 screens: {
@@ -439,6 +460,9 @@ function Timeline({navigation, route}) {
               doReply={(postId) => { setPostReplyId(postId); setPostModalVisible(true); }}
               onProfileClick={profileNavigate}
            />}
+           ItemSeparatorComponent={
+               () => <View style={{padding: 5}} />
+           }
            ListHeaderComponent={
              <View>
                <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
@@ -453,46 +477,29 @@ function Timeline({navigation, route}) {
            onEndReachedThreshold={0.7}
         />
         <View style={{position: 'absolute', bottom: 50, right: 50}}><Pressable onPress={() => setPostModalVisible(true)}><AntDesign name="pluscircle" size={48} color="green" /></Pressable></View>
-     <StatusBar style="dark" />
+     <StatusBar style="auto" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-container: {
-  flex: 1,
-  backgroundColor: '#faf',
-},
-mainContainer: {
-flex: 1,
-backgroundColor: '#fff',
-flexFlow: 'space-between',
-flexDirection: 'column',
-width: '100%',
-},
-flexer: {
-  flex: 1,
-},
-timelineContainer: {
-flexFlow: 'stretch',
-flexDirection: 'row',
-justifyContent: 'center',
-borderWidth: 1,
-backgroundColor: '#fff',
-},
-timelineItem: {
-flex: 1,
-borderColor: 'green',
-borderStyle: 'solid',
-borderWidth: 1,
-},
-timelineText: {
-fontSize: 20,
-textAlign: 'center',
-},
-actionsContainer: {
-  flex: 1,
-  // backgroundColor: '#fff',
-}
-
+    timelineContainer: {
+        flexFlow: 'stretch',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    timelineItem: {
+        flex: 1,
+        borderColor: 'green',
+        borderStyle: 'solid',
+        borderWidth: 1,
+    },
+    timelineText: {
+        fontSize: 20,
+        textAlign: 'center',
+    },
+    actionsContainer: {
+        flex: 1,
+    }
 });

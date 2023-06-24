@@ -4,7 +4,7 @@ import { useRef, useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useTheme } from '@react-navigation/native';
 import { Entypo } from "@expo/vector-icons";
 import { MenuOptions, MenuOption, Menu, MenuTrigger} from 'react-native-popup-menu';
 import * as Linking from 'expo-linking';
@@ -49,6 +49,7 @@ function Poll({choices, noteid}) {
 export function PostModal({show, onClose, replyTo, replyContext}) {
     const author = useContext(AccountContext);
     const server = useContext(ServerContext);
+    const theme = useTheme().colors;
     const [content, setContent] = useState('');
     const api = useAPI();
     const postAuthor = (author && author.accountInfo) ?
@@ -62,15 +63,15 @@ export function PostModal({show, onClose, replyTo, replyContext}) {
     return <Modal animationType="slide" style={{flex: 1}}
                 visible={show}
                 onRequestClose={() => onClose()}>
-        <View style={{flex: 1}}>
+        <View style={{flex: 1, backgroundColor: theme.background}}>
             <View style={{flex: 1, flexDirection: 'row'}}>
               {postAuthor}
-              <View style={{flex: 1, alignItems: 'center'}}><Text style={{flex: 1, textAlign: 'right'}}>Characters left: {server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></View>
+              <View style={{flex: 1, alignItems: 'center'}}><Text style={{flex: 1, textAlign: 'right', color: theme.text}}>Characters left: <Text style={{fontWeight: 'bold'}}>{server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></Text></View>
             </View>
             {replyContext}
             <MFM style={{flex: 2}} text={content} />
             <TextInput multiline={true} 
-                style={{flex: 6, padding: 2, margin: 2, borderColor: 'black', borderWidth: 2, textAlignVertical: 'top'}}
+                style={{flex: 6, padding: 2, margin: 2, borderColor: theme.border, borderWidth: 2, textAlignVertical: 'top', color: theme.text}}
                 autoFocus={true}
                 value={content}
                 onChangeText={setContent}
@@ -127,6 +128,7 @@ function PostVisibility(props) {
     }
 }
 export function PostAuthor(props) {
+    const theme = useTheme().colors;
     return (
            <Pressable onPress={() => {
                if (props.onProfileClick) {
@@ -142,8 +144,8 @@ export function PostAuthor(props) {
                  />
                </View>
                <View>
-                 <Text>{props.user.name}</Text>
-                 <Text>{formatUsername(props.user)}</Text>
+                 <Text style={{color: theme.text}}>{props.user.name}</Text>
+                 <Text style={{color: theme.text}}>{formatUsername(props.user)}</Text>
                </View>
          </View>
            </Pressable>
@@ -176,6 +178,7 @@ function PostMenu(props) {
     const account = useContext(AccountContext);
     const server = useContext(ServerContext);
     const api = useAPI();
+    const theme = useTheme();
     const options = [];
     if (account && props.PostId) {
         options.push(<MenuOption key="open" onSelect={() => Linking.openURL('https://' + account.instance + '/notes/' + props.PostId)} text="Open in browser" />);
@@ -221,7 +224,7 @@ function PostMenu(props) {
     return (
         <Menu style={{flex: 1}}>
           <MenuTrigger style={{flex: 1, alignSelf: 'flex-end'}}>
-            <Entypo name="dots-three-vertical" size={24} color="black" />
+            <Entypo name="dots-three-vertical" size={24} color={theme.dark == true ? '#777' : 'black'} />
           </MenuTrigger>
           <MenuOptions>
             {options}
@@ -234,6 +237,7 @@ function PostMenu(props) {
 function PostHeader(props) {
     const locale = 'en-CA';
     const time= new Date(props.time);
+    const theme = useTheme().colors;
     // const relativeTime = new RelativeTime();
 
     const timestr = time.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + time.toLocaleTimeString(locale);
@@ -249,13 +253,14 @@ function PostHeader(props) {
           <PostVisibility visibility={props.visibility} />
           <PostMenu doReply={props.doReply} PostId={props.content.id} OriginalURL={props.content.url || props.content.uri} myAccount={props.myAccount}/>
         </View>
-        <Text style={styles.postTime}>{timestr}</Text>
+        <Text style={[styles.postTime, {color: theme.text}]}>{timestr}</Text>
       </View>
     );
 }
 export function Post(props) {
     const navigation = useNavigation();
     const api = useAPI();
+    const theme = useTheme().colors;
     const loadThread = useCallback( () => {
       if (navigation && navigation.push) {
         console.log("Pushing thread", props.noteid);
@@ -272,6 +277,7 @@ export function Post(props) {
     const urls = [...thetext.matchAll(urlRE)];
     const previews = urls.map( (val, i) => {
         return <LinkPreview key={i} text={val[0]} 
+            containerStyle={{backgroundColor: '#aaa', margin: 10}}
             renderText={() => <View />}
         />;
     });
@@ -343,8 +349,8 @@ export function Post(props) {
     const poll = props.content.poll ? <Poll choices={props.content.poll.choices} expiresAt={props.content.poll.expiresAt} multiple={props.content.poll.multiple} noteid={props.noteid} /> : null;
     if (props.reply) {
         return (
-          <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
-            <Text>{props.replyLabel || 'In reply to:'}</Text>
+          <View style={props.noBorder ? styles.postContainerNoBorder : [styles.postContainer, {borderColor: theme.border, backgroundColor: theme.card}]}>
+            <Text style={{color: theme.text}}>{props.replyLabel || 'In reply to:'}</Text>
             <PostContext context={props.reply} onProfileClick={props.onProfileClick} />
             <Pressable onPress={loadThread}>
                 <PostHeader author={props.author}
@@ -363,7 +369,7 @@ export function Post(props) {
        );
     } else {
         return (
-          <View style={props.noBorder ? styles.postContainerNoBorder : styles.postContainer}>
+          <View style={props.noBorder ? styles.postContainerNoBorder : [styles.postContainer, {borderColor: theme.border, backgroundColor: theme.card}]}>
           {hashtagModal}
          <Pressable onPress={loadThread}>
             <PostHeader author={props.author}
@@ -449,7 +455,7 @@ export function PostList(props) {
                       alignItems: 'center',
                       textAlign: 'center',
                 }}>
-                  <Text>Boosted by </Text>
+                  <Text style={{color: theme.text}}>Boosted by </Text>
                   <PostAuthor user={p.user} onProfileClick={props.onProfileClick}/>
                   <PostVisibility visibility={p.visibility} />
                 </View>
@@ -498,6 +504,7 @@ export function PostList(props) {
 
 export function FlatListPost(props) {
     const p = props.post;
+    const theme = useTheme().colors;
     // console.log(p);
     if (p.text && p.renote) {
         // QT
@@ -546,7 +553,7 @@ export function FlatListPost(props) {
                       alignItems: 'center',
                       textAlign: 'center',
                 }}>
-                  <Text>Boosted by </Text>
+                  <Text style={{color: theme.text}}>Boosted by </Text>
                   <PostAuthor user={p.user} onProfileClick={props.onProfileClick}/>
                   <PostVisibility visibility={p.visibility} />
                 </View>
@@ -592,23 +599,16 @@ export function FlatListPost(props) {
 const styles = StyleSheet.create({
   postContainer: {
     flex: 1,
-    color: '#000',
-    backgroundColor: '#eee',
-    borderColor: 'black',
     borderStyle: 'solid',
-    borderWidth: 1,
+    borderWidth: 2,
     padding: 10,
   },
   postContainerNoBorder: {
     flex: 1,
-    color: '#000',
-    backgroundColor: '#eee',
     padding: 10,
   },
   postMetaContainer: {
     flex: 1,
-    color: '#000',
-    backgroundColor: '#eee',
     padding: 10,
     alignItems: 'center',
     display: 'flex',

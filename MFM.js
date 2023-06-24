@@ -4,6 +4,7 @@ import {memo, useContext, useMemo, useState } from 'react';
 import {AccountContext} from './Account';
 import * as Linking from 'expo-linking';
 import { useAPI } from './api';
+import { useTheme } from '@react-navigation/native';
 // import { WebView } from 'react-native-webview';
 import AutoHeightWebView from 'react-native-autoheight-webview'
 import katex from 'katex';
@@ -225,7 +226,7 @@ function node2HTML(callback, node) {
          return '<div>' + node.type + ' Not Implemented</div>'
         }
     }
-function MFM2HTML(mfmTree, emojis) {
+function MFM2HTML(mfmTree, emojis, background, foreground) {
     const nodeClosure = () => {
         return (node) => node2HTML(nodeClosure, node);
     };
@@ -560,7 +561,7 @@ function MFM2HTML(mfmTree, emojis) {
     }
     </script>
     `;
-    return '<body onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type: \'defaultclick\'})); return false;"}>' + animations + '<div>' + nodesAsHTML.join('') + "</div></body>";
+    return '<body style="color: ' + foreground + '" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type: \'defaultclick\'})); return false;"}>' + animations + '<div>' + nodesAsHTML.join('') + "</div></body>";
 }
 
 const MemoWebView = memo(function MemoWebView(props) {
@@ -611,9 +612,13 @@ const MemoWebView = memo(function MemoWebView(props) {
 });
 export default function MFM(props) {
     const account = useContext(AccountContext);
+    const theme = useTheme().colors;
     const html = useMemo( () => {
+        if (!props.text) {
+            return '<body></body>';
+        }
        const mfmTree = mfm.parse(props.text);
-       return MFM2HTML(mfmTree, props.emojis);
+       return MFM2HTML(mfmTree, props.emojis, theme.card, theme.text);
     }, [props.text, props.emojis]);
     return <View style={{flex: 1}}>
         <MemoWebView html={html} account={account} instance={account.instance} onClick={props.onClick}

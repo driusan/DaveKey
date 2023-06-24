@@ -7,7 +7,25 @@ CWs when applicable
 Add refresh icon in header
 Notifications
     - actions (reply/like) in notification
-Antennas
 Hashtag - search for users
 Images - click to expand
+Use secure store for tokens
 WebSocket subscription 
+
+Missing CalcKey features:
+- Chat
+- Explore
+- Bookmarks
+- Channels
+- Search
+- Drive
+- Announcements
+- Lists
+- Antennas
+- Pages
+- Galleries
+- Clips
+- Groups
+- Layout
+- Refresh
+
