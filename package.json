@@ -23,7 +23,7 @@
     "crypto": "^1.0.1",
     "date-time-format-timezone": "^1.0.22",
     "eas-cli": "^3.13.0",
-    "expo": "~48.0.15",
+    "expo": "~48.0.18",
     "expo-background-fetch": "~11.1.1",
     "expo-crypto": "~12.2.1",
     "expo-linking": "~4.0.1",
