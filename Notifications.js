@@ -7,6 +7,7 @@ import { formatUsername} from './utils';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import MFM from './MFM';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
@@ -16,16 +17,9 @@ const NOTIFICATION_TASK = 'notification-fetch';
 // can't useAPI in notifications, need to duplicate
 // the logic from Account.js
 async function backgroundAPI(endpoint, params) {
-    let instance;
-    let i;
-    const vals = await AsyncStorage.multiGet(['@i', '@instance']);
-    for(const obj of vals) {
-        const [key, val] = obj;
-        switch (key) {
-            case '@instance': instance = val; break;
-            case '@i': i = val; break;
-        }
-    }
+    const instance = await SecureStore.getItemAsync('instance');
+    const i = await SecureStore.getItemAsync('i');
+
     if (!instance || !i) {
         console.warn('No credentials for API call.');
         return;
@@ -92,15 +86,13 @@ TaskManager.defineTask(NOTIFICATION_TASK, async () => {
 });
 
 async function getNotificationsBackground() {
-    let instance = null;
-    let i = null;
+    const instance = await SecureStore.getItemAsync('instance');
+    const i = await SecureStore.getItemAsync('i');
     let lastNotif = null;
-    const vals = await AsyncStorage.multiGet(['@i', '@instance', '@lastNotificationId']);
+    const vals = await AsyncStorage.multiGet(['@lastNotificationId']);
     for(const obj of vals) {
         const [key, val] = obj;
         switch (key) {
-            case '@instance': instance = val; break;
-            case '@i': i = val; break;
             case '@lastNotificationId': lastNotif = val; break;
         }
     }

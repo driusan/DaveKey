@@ -46,7 +46,8 @@
     "react-native-screens": "~3.20.0",
     "react-native-webview": "11.26.0",
     "expo-av": "~13.2.1",
-    "expo-web-browser": "~12.1.1"
+    "expo-web-browser": "~12.1.1",
+    "expo-secure-store": "~12.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

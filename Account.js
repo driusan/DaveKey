@@ -1,5 +1,5 @@
 import {useState,useEffect, createContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export const AccountContext = createContext(null);
 
@@ -8,17 +8,12 @@ export function useCalckeyAccount() {
   const [instance, setInstance] = useState('');
   const [accountInfo, setAccountInfo] = useState(null);
   useEffect(() => {
-      AsyncStorage.multiGet(['@i', '@instance']).then(
-        (vals) => {
-            for(const obj of vals) {
-                const [key, val] = obj;
-                switch (key) {
-                    case '@instance': setInstance(val); break;
-                    case '@i': setAccessToken(val); break;
-                }
-            }
-        }
-      );
+      SecureStore.getItemAsync('i').then( (val) => {
+          setAccessToken(val);
+      });
+      SecureStore.getItemAsync('instance').then( (val) => {
+          setInstance(val);
+      });
   }, []);
   useEffect(() => {
       // Fetch profile info after login
@@ -68,14 +63,14 @@ export function useCalckeyAccount() {
       login: (i, instance) => {
           setInstance(instance);
           setAccessToken(i);
-          AsyncStorage.setItem('@i', i);
-          AsyncStorage.setItem('@instance', instance);
+          SecureStore.setItemAsync('i', i);
+          SecureStore.setItemAsync('instance', instance);
       },
       logout: () => {
           setAccessToken(null);
           setInstance('');
-          AsyncStorage.removeItem('@i');
-          AsyncStorage.removeItem('@instance');
+          SecureStore.deleteItemAsync('i');
+          SecureStore.deleteItemAsync('instance');
       },
       api: (endpoint, params) => {
         if (!instance) {

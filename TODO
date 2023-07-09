@@ -8,7 +8,6 @@ Notifications
     - actions (reply/like) in notification
 Hashtag - search for users
 Images - click to expand
-Use secure store for tokens
 WebSocket subscription 
 
 Missing CalcKey features:
