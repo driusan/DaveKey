@@ -1,26 +1,54 @@
 import { StatusBar } from 'expo-status-bar';
-
+import * as Linking from 'expo-linking';
 import { StyleSheet, Text, View, TextInput, Button } from 'react-native';
 import { WebView } from 'react-native-webview';
-import React, {useState,useEffect} from 'react';
+import React, {useRef, useState,useEffect} from 'react';
 import * as Crypto from 'expo-crypto';
+import { useTheme} from '@react-navigation/native';
+import { useColorScheme } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 
-function GetAccessToken(props) {
+
+function useInstancePrompt() {
   const [instance, setInstance] = useState('');
   const [instanceSelected, setInstanceSelected] = useState(false);
+  const theme = useTheme().colors;
+  const themeName = useColorScheme();
 
+  return {
+      instance: instanceSelected ? instance : null,
+      selected: instanceSelected,
+      promptview: (<View style={[styles.container, {backgroundColor: theme.background}]}>
+      <Text style={[styles.instanceLabel, {color: theme.primary}]}>Enter your instance name:</Text>
+      <TextInput value={instance}
+          onChangeText={setInstance}
+          style={[styles.instanceInput, {color: theme.text, backgroundColor: theme.card}]}
+          placeholder="calckey.social"
+          placeholderTextColor={themeName == "dark" ? "#777": "#999"}
+      />
+      <View style={styles.loginButton}>
+        <Button title='Login' onPress={() => {
+               setInstanceSelected(true);
+        }} />
+      </View>
+      <StatusBar style="auto" />
+    </View>
+    )
+  };
+}
+function GetAccessToken(props) {
+    return KeyGetAccessToken(props);
+}
+
+function useKeyAppSecret(instance) {
   const [appSecret, setAppSecret] = useState(null);
-  const [token, setToken] = useState(null);
-  const [authURL, setAuthURL] = useState(null);
-  const [authDone, setAuthDone] = useState(false);
 
-  // get the app secret
   useEffect( () => {
-      console.log('Getting app secret');
-      if (!instance || instanceSelected) {
+      if (!instance) {
           return;
       }
       // get the app secret
+      //console.log('getting secret from', 'https://' + instance + "/api/app/create")
       fetch('https://' + instance + "/api/app/create",
       {
           method: 'POST',
@@ -40,28 +68,30 @@ function GetAccessToken(props) {
                 "write:reactions",
                 "write:votes",
             ],
-            callbackUrl: 'https://' + instance + '/?loginsuccess=true',
+            callbackUrl: Linking.createURL('loginsuccess', {})//'https://' + instance + '/?loginsuccess=true',
          }),
       }).then((resp) => resp.json())
       .then((json) => {
-          console.log('app secret', json);
+          //console.log('app secret', json);
           setAppSecret(json.secret);
       })
       .catch((error) => console.log('catch', error));
-  }, [instance, instanceSelected]);
+  }, [instance]);
+  return appSecret;
+}
 
-  // get the session token
+function useKeySession(instance, appSecret) {
+  const [token, setToken] = useState(null);
+  const [authURL, setAuthURL] = useState(null);
+  const [authDone, setAuthDone] = useState(false);
   useEffect(() => {
-      if (!instance || !instanceSelected) {
+      if (!instance) {
+          //console.log('no instance');
           return;
       }
+
       if (!appSecret) {
-          return;
-      }
-      if (authURL) {
-          return;
-      }
-      if (!instance || !instanceSelected) {
+          //console.log('no secret');
           return;
       }
       fetch('https://' + instance + "/api/auth/session/generate",
@@ -77,22 +107,32 @@ function GetAccessToken(props) {
          }),
       }).then((resp) => resp.json())
       .then((json) => {
-          console.log('got session', json);
+          //console.log('got session', json);
           setToken(json.token);
           setAuthURL(json.url);
+          Linking.addEventListener('url', (url) => {
+              const u = Linking.parse(url.url);
+              //console.log(u);
+              if (u.path == 'loginsuccess') {
+                  setAuthDone(true);
+                  // causes an error when not on iOS
+                  // WebBrowser.dismissBrowser();
+              }
+          });
+          WebBrowser.openBrowserAsync(json.url);
       }).catch((error) => console.error(error));
         
-  }, [appSecret, instanceSelected]);
-  useEffect(() => {
-      console.log(appSecret, token, authDone);
-      if (!instance || !instanceSelected) {
-          return;
-      }
-      if (!appSecret || !token || !authDone) {
-          return;
-      }
+  }, [instance, appSecret]);
+  return authDone ? token : '';
+}
 
-      fetch('https://' + instance + "/api/auth/session/userkey",
+function useKeyI(instance, appSecret, token) {
+   const [i, setI] = useState(null);
+   useEffect( () => {
+       if (!instance || !appSecret || !token) {
+           return;
+       }
+       fetch('https://' + instance + "/api/auth/session/userkey",
       {
           method: 'POST',
           headers: {
@@ -107,56 +147,42 @@ function GetAccessToken(props) {
          }),
       }).then((resp) => resp.json())
       .then((json) => {
+          //console.log('calcing i', json);
           // calculate i
           Crypto.digestStringAsync(
               Crypto.CryptoDigestAlgorithm.SHA256,
               json.accessToken + appSecret
           ).then( (val) => {
-              console.log('xx', val, instance);
-              props.onSuccess(val, instance);
-              console.log(val);
-              // setIToken(val);
+              setI(val);
           }).catch( (e) => {
               console.error(e);
           });
       }).catch((error) => console.error('userkey', error));
-        
-  }, [appSecret, token, authDone, instanceSelected]);
-  if (authURL) {
-      console.log(authURL, 'a');
-      return <WebView source={{uri: authURL}}
-            onNavigationStateChange={ (state) => {
-                if (state.url.includes('?loginsuccess=true')) {
-                    setAuthDone(true);
-                }
-                console.log(state);
-            }}
-          />;
-  }
+   }, [instance, appSecret, token]);
+   return i;
+}
+function KeyGetAccessToken(props) {
+  // const [authDone, setAuthDone] = useState(false);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.instanceLabel}>Enter your instance name:</Text>
-      <TextInput value={instance}
-          onChangeText={setInstance}
-          style={styles.instanceInput}
-          placeholder="calckey.social"
-          
-      />
-      <View style={styles.loginButton}>
-        <Button title='Login' onPress={() => {
-               setInstanceSelected(true);
-        }} />
-      </View>
-      <StatusBar style="auto" />
-    </View>
-  );
+  const instance = useInstancePrompt();
+  const appSecret = useKeyAppSecret(instance.instance);
+  const sessiontoken = useKeySession(instance.instance, appSecret);
+  const i = useKeyI(instance.instance, appSecret, sessiontoken);
+  useEffect( () => {
+      if (instance && i) {
+          //console.log('onsuccess', instance.instance, i);
+          props.onSuccess(i, instance.instance);
+      }
+  }, [instance, i]);
+
+  //console.log(appSecret, sessiontoken, i);
+
+  return instance.promptview;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     flexFlow: 'space-between',
     justifyContent: 'center',
     alignItems: 'center',
@@ -168,7 +194,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   instanceLabel: {
-    backgroundColor: '#fff',
     alignItems: 'center',
     fontWeight: 'bold',
     fontSize: 20,

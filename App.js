@@ -278,12 +278,12 @@ function GetToken() {
 }
 function KeyAccessTokenScreen() {
   const account = useContext(AccountContext);
-      return <GetAccessToken 
-        onSuccess={(i, instance) => {
-            console.log('logging in', i, instance);
-            account.login(i, instance);
-        }}
-      />;
+  return (<GetAccessToken 
+    onSuccess={(i, instance) => {
+      console.log('logging in', i, instance);
+      account.login(i, instance);
+    }}
+  />);
 }
 
 function getTheme(dark) {
@@ -315,6 +315,7 @@ export default function App() {
         }).catch( (e) => console.error(e));
     }, [account.instance]);
 
+    const screen = (!account || !account.i) ? <GetToken /> : <ActionsDrawer account={account}/>;
     return (
       <AccountContext.Provider value={account}>
       <ServerContext.Provider value={serverMeta}>
@@ -335,7 +336,8 @@ export default function App() {
             },
             subscribe(listener) {
               const onReceiveURL = (url) => {
-                  console.log('received url', url)};
+                  console.log('received url', url)
+                  };
 
               // Listen to incoming links from deep linking
               const eventListenerSubscription = Linking.addEventListener('url subscribe', onReceiveURL);
@@ -350,7 +352,7 @@ export default function App() {
               });
             }
         }}>
-          <ActionsDrawer account={account}/>
+            {screen}
         </NavigationContainer>
       </MenuProvider>
       </ServerContext.Provider>
@@ -443,13 +445,6 @@ function Timeline({navigation, route}) {
       });
   }
 
-  if (account.i == null) {
-      return <GetAccessToken 
-        onSuccess={(i, instance) => {
-            account.login(i, instance);
-        }}
-      />;
-  }
   let refreshControl = <RefreshControl refreshing={timeline.isRefreshing} onRefresh={onRefresh} enabled={true}/>;
   const displayedposts = includeBoosts ? timeline.posts : timeline.posts.filter((post) => post.text);
   return (
