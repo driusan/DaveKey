@@ -112,8 +112,9 @@ function useKeySession(instance, appSecret) {
           setAuthURL(json.url);
           Linking.addEventListener('url', (url) => {
               const u = Linking.parse(url.url);
-              //console.log(u);
-              if (u.path == 'loginsuccess') {
+              // gets parsed as hostname for a native eas build and path when
+              // in the expo dev app
+              if (u.path == 'loginsuccess' || u.hostname == 'loginsuccess') {
                   setAuthDone(true);
                   // causes an error when not on iOS
                   // WebBrowser.dismissBrowser();
