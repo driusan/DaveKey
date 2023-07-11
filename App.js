@@ -30,7 +30,11 @@ function ActionsStack() {
       <Stack.Screen options={{headerShown: false}} name="Timeline" component={Timelines} initialParams={{timelineType: 'hybrid'}}/>
       <Stack.Screen options={{headerShown: false}} name="Profile" component={OtherProfile} />
       <Stack.Screen name="Thread" component={Thread} />
-      <Stack.Screen name="Hashtag" component={HashtagPage} />
+      <Stack.Screen name="Hashtag" options={({navigation, route}) => {
+          const tag = route.params?.Tag;
+          return { title: tag ? '#' + tag : 'Hashtag'};
+
+      }} component={HashtagPage} />
     </Stack.Navigator>
   );
 }
