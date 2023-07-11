@@ -1,5 +1,5 @@
 import MFM from './MFM';
-import { FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal } from 'react-native';
+import { Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal } from 'react-native';
 import { useRef, useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -13,7 +13,38 @@ import { ServerContext} from './contexts';
 import { useAPI } from './api';
 import { Video, ResizeMode } from 'expo-av';
 
-
+function PostImage({url, imageHeight, imageWidth}) {
+    const [displayModal, setDisplayModal] = useState(false);
+    const modal = () => {
+        if (displayModal == false) {
+            return null;
+        }
+        const dims = Dimensions.get('window');
+        const height = imageHeight > dims.height ? dims.height : imageHeight;
+        return <Modal animationType="fade" transparent={true}>
+            <View style={{backgroundColor: 'rgba(0, 0, 0, 0.8)', height: dims.height, width: dims.width}}>
+                    <Pressable onPress={() => setDisplayModal(false) }>
+                        <Image
+                           height={height}
+                           source={{ uri: url}}
+                           resizeMode={'contain'}
+                           resizeMethod={'auto'} />
+                    </Pressable>
+            </View>
+    </Modal>; 
+    }
+    return (<View>
+        {modal()}
+        <Pressable onPress={() => { setDisplayModal(true) }}>
+            <Image 
+               source={{ uri: url}}
+               height={imageHeight > 400 ? 400 : imageHeight}
+               resizeMode={'contain'}
+               resizeMethod={'resize'}
+            />
+         </Pressable>
+     </View>);
+}
 function Poll({choices, noteid}) {
     const api = useAPI();
     const choicesViews = choices.map( (option, i) => {
@@ -297,15 +328,9 @@ export function Post(props) {
                 resizeMode={ResizeMode.CONTAIN}
                 isLooping
             />;
-            return <View key={i}><Text>Unhandled vodeo type {file.type}</Text></View>;
+            return <View key={i}><Text>Unhandled video type {file.type}</Text></View>;
         } else if (file.type.startsWith('image/')) {
-            const height = file.properties.height > 400 ? 400 : file.properties.height;
-            return <Image key={i}
-                 source={{ uri: file.url}}
-                 height={height}
-                 resizeMode={'contain'}
-                 resizeMethod={'resize'}
-           />;
+            return <PostImage key={i} url={file.url} imageWidth={file.properties.width} imageHeight={file.properties.height} />;
         } else {
             return <View key={i}><Text>Unhandled attachment type {file.type}</Text></View>;
         }
