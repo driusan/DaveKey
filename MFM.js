@@ -628,6 +628,9 @@ export default function MFM(props) {
         </View>;
 }
 
+export function canUseNativeMFM(text) {
+    return false;
+}
 
 const styles = StyleSheet.create({
     mention: {
