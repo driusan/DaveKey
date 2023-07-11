@@ -1,10 +1,10 @@
 import * as mfm from 'mfm-js';
-import { StyleSheet, View, Text, Pressable, Image } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, Pressable, Image } from 'react-native';
 import {memo, useContext, useMemo, useState } from 'react';
 import {AccountContext} from './Account';
 import * as Linking from 'expo-linking';
 import { useAPI } from './api';
-import { useTheme } from '@react-navigation/native';
+import { useNavigation, useTheme } from '@react-navigation/native';
 // import { WebView } from 'react-native-webview';
 import AutoHeightWebView from 'react-native-autoheight-webview'
 import katex from 'katex';
@@ -610,7 +610,68 @@ const MemoWebView = memo(function MemoWebView(props) {
            }}
            originWhitelist={['*']} />
 });
-export default function MFM(props) {
+
+function NativeMFMNode({node, style, emojis, loadProfileFN}) {
+    const t = useTheme();
+    const theme = t.colors;
+    const account = useContext(AccountContext);
+    const navigation = useNavigation();
+    switch (node.type) {
+    case 'text': 
+        return <Text style={style}>{node.props.text}</Text>;
+    case 'bold':
+        return node.children.map( (child, i) => <NativeMFMNode style={{...style, fontWeight: 'bold'}} key={i} node={child} loadProfileFN={loadProfileFN} />);
+    case 'italic':
+        return node.children.map( (child, i) => <NativeMFMNode style={{...style, fontStyle: 'italic'}} key={i} node={child} loadProfileFN={loadProfileFN} />);
+    case 'mention':
+        return <Text onPress={() => {
+                console.log(loadProfile);
+                loadProfile(account, node.props.username, node.props.host, loadProfileFN);
+        }} style={{...style, color: theme.primary}}>{node.props.acct}</Text>;
+    case 'unicodeEmoji':
+        return <Text style={style}>{node.props.emoji}</Text>;
+    case 'hashtag':
+        return <Text onPress={() => {
+            navigation.push("Hashtag", {Tag: node.props.hashtag})
+        }} style={{...style, color: theme.primary}}>#{node.props.hashtag}</Text>;
+    case 'url':
+        return <Text onPress={() => {
+            Linking.openURL(node.props.url);
+        }} style={{...style, color: theme.primary}}>{node.props.url}</Text>;
+    case 'link':
+        return <Text onPress={() => {
+            Linking.openURL(node.props.url);
+        }} style={{...style, color: theme.primary}}>{node.children.map( (child, i) => <NativeMFMNode style={{...style, color: theme.primary}} key={i} node={child} loadProfileFN={loadProfileFN} />)}</Text>;
+    case 'plain':
+        return node.children.map( (child, i) => <NativeMFMNode style={{color: theme.text}} key={i} node={child} loadProfileFN={loadProfileFN} />);
+    case 'inlineCode':
+        const inlineStyle = t.dark
+             ? { fontFamily: 'monospace', color: theme.text, backgroundColor: '#333'}
+             : { fontFamily: 'monospace', color: theme.text, backgroundColor: '#ddd'}
+        return <Text style={{...style, ...inlineStyle}}>{node.props.code}</Text>;
+    case 'emojiCode':
+        console.log('emojis', emojis, node.props.name);
+        if (emojis) {
+            for (const el of emojis) {
+              if (el.name == node.props.name) {
+                return <Image source={{uri: el.url}} style={{width: 40, height: 40}} />
+              }
+            }
+          }
+        return <Text style={{color: theme.text}}>:{node.props.name}:</Text>;
+    default: throw new Error('Unhandled node type:' + node.type);
+    }
+}
+function NativeMFM(props) {
+    const theme = useTheme().colors;
+    const mfmTree = mfm.parse(props.text);
+    return <View style={{flex: 1, flexDirection: 'column'}}>
+        <Text style={{color: theme.primary}}>Native</Text>
+        <Pressable onPress={props.onClick}><View style={{flex: 1}}><Text>{mfmTree.map( (node, i) => <NativeMFMNode emojis={props.emojis} loadProfileFN={props.loadProfileFN} style={{color: theme.text}} key={i} node={node} />)}</Text></View></Pressable>
+    </View>
+}
+
+function WebViewMFM(props) {
     const account = useContext(AccountContext);
     const theme = useTheme().colors;
     const html = useMemo( () => {
@@ -621,6 +682,7 @@ export default function MFM(props) {
        return MFM2HTML(mfmTree, props.emojis, theme.card, theme.text);
     }, [props.text, props.emojis]);
     return <View style={{flex: 1}}>
+        <Text style={{color: theme.primary}}>WebView</Text>
         <MemoWebView html={html} account={account} instance={account.instance} onClick={props.onClick}
             onHashtagClicked={props.onHashtagClicked}
 
@@ -628,8 +690,55 @@ export default function MFM(props) {
         </View>;
 }
 
+export default function MFM(props) {
+    switch (props.engine || '') {
+    case 'native':
+        return <NativeMFM {...props} loadProfileFN={props.loadProfile}/>;
+    case 'webview':
+        return <WebViewMFM {...props} />;
+    default:
+        if (canUseNativeMFM(props.text)) {
+            return <NativeMFM {...props} loadProfileFN={props.loadProfile}/>;
+        } else {
+            return <WebViewMFM {...props} />;
+        }
+    }
+}
+
 export function canUseNativeMFM(text) {
-    return false;
+    const mfmTree = mfm.parse(text);
+    const isSupported = (node) => {
+        switch(node.type) {
+        case 'bold':
+        case 'italic':
+        case 'link':
+        case 'plain':
+            return node.children.reduce( (current, value) => {
+                    return current && isSupported(value)
+            }, true);
+        case 'text':
+        case 'url': 
+        case 'mention':
+        case 'unicodeEmoji':
+        case 'hashtag': 
+        case 'inlineCode':
+        case 'emojiCode':
+            return true;
+        case 'mathInline':
+        case 'mathBlock':
+        case 'small':
+        case 'quote':
+        case 'inlineCode':
+        case 'blockCode':
+        case 'center':
+        case 'fn':
+        default:
+         return false;
+        }
+    };
+    return mfmTree.reduce( (current, value) => {
+        return current && isSupported(value)
+    }, true);
 }
 
 const styles = StyleSheet.create({
