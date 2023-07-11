@@ -680,7 +680,6 @@ function NativeMFM(props) {
     const [viewWidth, setViewWidth] = useState(Dimensions.get('window').width);
 
     return <View style={{flex: 1, flexDirection: 'column', width: '98%'}}>
-        <Text style={{color: theme.primary}}>Native</Text>
         <Pressable onPress={props.onClick}>
             <View style={{flex: 1, flexDirection: 'row'}}
                 onLayout={ ({nativeEvent}) => {
