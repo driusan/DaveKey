@@ -1,5 +1,5 @@
 import MFM from './MFM';
-import { FlatList, StyleSheet, Pressable, Text, TextInput, View, Image, Button, Alert, Modal } from 'react-native';
+import { FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal } from 'react-native';
 import { useRef, useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -69,7 +69,7 @@ export function PostModal({show, onClose, replyTo, replyContext}) {
               <View style={{flex: 1, alignItems: 'center'}}><Text style={{flex: 1, textAlign: 'right', color: theme.text}}>Characters left: <Text style={{fontWeight: 'bold'}}>{server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></Text></View>
             </View>
             {replyContext}
-            <MFM style={{flex: 2}} text={content} />
+            <ScrollView style={{flex: 1}}><MFM style={{flex: 2}} text={content} /></ScrollView>
             <TextInput multiline={true} 
                 style={{flex: 6, padding: 2, margin: 2, borderColor: theme.border, borderWidth: 2, textAlignVertical: 'top', color: theme.text}}
                 autoFocus={true}

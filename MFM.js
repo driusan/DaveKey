@@ -1,5 +1,5 @@
 import * as mfm from 'mfm-js';
-import { StyleSheet, ScrollView, View, Text, Pressable, Image } from 'react-native';
+import { Dimensions, StyleSheet, ScrollView, View, Text, Pressable, Image } from 'react-native';
 import {memo, useContext, useMemo, useState } from 'react';
 import {AccountContext} from './Account';
 import * as Linking from 'expo-linking';
@@ -193,7 +193,6 @@ function node2HTML(callback, node) {
         case 'italic':
            return "<i>" + children + "</i>";
         case 'mathInline':
-            console.log(node.props);
            return "<span>" + katex.renderToString(node.props.formula, { throwOnError: false, output: 'mathml' }) + "</span>";
         case 'mathBlock':
            return "<div>" + katex.renderToString(node.props.formula, { throwOnError: false, output: 'mathml' }) + "</div>";
@@ -202,7 +201,6 @@ function node2HTML(callback, node) {
         case 'quote':
            return "<blockquote style=\"background: #ddd; margin: 1em; padding: 1em; margin-left: 0; display: block; border-left: 8px solid #222;\">" + children + "</blockquote>";
         case 'emojiCode':
-           console.log('emojis', emojis, node.props.name);
           if (emojis) {
             for (const el of emojis) {
               if (el.name == node.props.name) {
@@ -611,7 +609,7 @@ const MemoWebView = memo(function MemoWebView(props) {
            originWhitelist={['*']} />
 });
 
-function NativeMFMNode({node, style, emojis, loadProfileFN}) {
+function NativeMFMNode({node, style, emojis, loadProfileFN, parentWidth}) {
     const t = useTheme();
     const theme = t.colors;
     const account = useContext(AccountContext);
@@ -620,12 +618,11 @@ function NativeMFMNode({node, style, emojis, loadProfileFN}) {
     case 'text': 
         return <Text style={style}>{node.props.text}</Text>;
     case 'bold':
-        return node.children.map( (child, i) => <NativeMFMNode style={{...style, fontWeight: 'bold'}} key={i} node={child} loadProfileFN={loadProfileFN} />);
+        return node.children.map( (child, i) => <NativeMFMNode parentWidth={parentWidth} style={{...style, fontWeight: 'bold'}} key={i} node={child} loadProfileFN={loadProfileFN} />);
     case 'italic':
-        return node.children.map( (child, i) => <NativeMFMNode style={{...style, fontStyle: 'italic'}} key={i} node={child} loadProfileFN={loadProfileFN} />);
+        return node.children.map( (child, i) => <NativeMFMNode parentWidth={parentWidth} style={{...style, fontStyle: 'italic'}} key={i} node={child} loadProfileFN={loadProfileFN} />);
     case 'mention':
         return <Text onPress={() => {
-                console.log(loadProfile);
                 loadProfile(account, node.props.username, node.props.host, loadProfileFN);
         }} style={{...style, color: theme.primary}}>{node.props.acct}</Text>;
     case 'unicodeEmoji':
@@ -641,16 +638,31 @@ function NativeMFMNode({node, style, emojis, loadProfileFN}) {
     case 'link':
         return <Text onPress={() => {
             Linking.openURL(node.props.url);
-        }} style={{...style, color: theme.primary}}>{node.children.map( (child, i) => <NativeMFMNode style={{...style, color: theme.primary}} key={i} node={child} loadProfileFN={loadProfileFN} />)}</Text>;
+        }} style={{...style, color: theme.primary}}>{node.children.map( (child, i) => <NativeMFMNode parentWidth={parentWidth} style={{...style, color: theme.primary}} key={i} node={child} loadProfileFN={loadProfileFN} />)}</Text>;
     case 'plain':
-        return node.children.map( (child, i) => <NativeMFMNode style={{color: theme.text}} key={i} node={child} loadProfileFN={loadProfileFN} />);
+        return node.children.map( (child, i) => <NativeMFMNode parentWidth={parentWidth} style={{color: theme.text}} key={i} node={child} loadProfileFN={loadProfileFN} />);
     case 'inlineCode':
         const inlineStyle = t.dark
              ? { fontFamily: 'monospace', color: theme.text, backgroundColor: '#333'}
              : { fontFamily: 'monospace', color: theme.text, backgroundColor: '#ddd'}
         return <Text style={{...style, ...inlineStyle}}>{node.props.code}</Text>;
+    case 'quote':
+        const quoteColors = t.dark
+            ? {color: theme.text, borderColor: '#aaa'}
+            : {color: theme.text, borderColor: '#333'};
+        return <Text>{"\n\n"}<View style={{...quoteColors, borderLeftWidth: 7, padding: 10, borderWidth: 0, width: parentWidth* 0.8}}><Text>{node.children.map( (child, i) => <NativeMFMNode parentWidth={parentWidth*0.8}style={style} key={i} node={child} loadProfileFN={loadProfileFN} />)}</Text></View>{"\n\n"}</Text>
+    case 'blockCode':
+        const blockCodeColors= t.dark
+            ? {backgroundColor: '#333'}
+            : {backgroundColor: '#ddd'};
+        return <Text>{"\n\n"}<View style={
+            {...blockCodeColors, 
+                padding: 10,
+                borderWidth: 0,
+                width: parentWidth*0.8,
+            }
+        }><Text style={{fontFamily: 'monospace', color: theme.text}}>{node.props.code}</Text></View>{"\n\n"}</Text>
     case 'emojiCode':
-        console.log('emojis', emojis, node.props.name);
         if (emojis) {
             for (const el of emojis) {
               if (el.name == node.props.name) {
@@ -665,9 +677,24 @@ function NativeMFMNode({node, style, emojis, loadProfileFN}) {
 function NativeMFM(props) {
     const theme = useTheme().colors;
     const mfmTree = mfm.parse(props.text);
-    return <View style={{flex: 1, flexDirection: 'column'}}>
+    const [viewWidth, setViewWidth] = useState(Dimensions.get('window').width);
+
+    return <View style={{flex: 1, flexDirection: 'column', width: '98%'}}>
         <Text style={{color: theme.primary}}>Native</Text>
-        <Pressable onPress={props.onClick}><View style={{flex: 1}}><Text>{mfmTree.map( (node, i) => <NativeMFMNode emojis={props.emojis} loadProfileFN={props.loadProfileFN} style={{color: theme.text}} key={i} node={node} />)}</Text></View></Pressable>
+        <Pressable onPress={props.onClick}>
+            <View style={{flex: 1, flexDirection: 'row'}}
+                onLayout={ ({nativeEvent}) => {
+                    setViewWidth(nativeEvent.layout.width)
+                }}>
+                <Text style={{flex: 1}}>{mfmTree.map( (node, i) => 
+                    <NativeMFMNode parentWidth={viewWidth} 
+                                   emojis={props.emojis}
+                                   loadProfileFN={props.loadProfileFN}
+                                   style={{color: theme.text}} key={i} node={node}
+                   />)}
+               </Text>
+            </View>
+        </Pressable>
     </View>
 }
 
@@ -713,6 +740,7 @@ export function canUseNativeMFM(text) {
         case 'italic':
         case 'link':
         case 'plain':
+        case 'quote':
             return node.children.reduce( (current, value) => {
                     return current && isSupported(value)
             }, true);
@@ -723,13 +751,12 @@ export function canUseNativeMFM(text) {
         case 'hashtag': 
         case 'inlineCode':
         case 'emojiCode':
+        case 'blockCode':
             return true;
         case 'mathInline':
         case 'mathBlock':
         case 'small':
-        case 'quote':
         case 'inlineCode':
-        case 'blockCode':
         case 'center':
         case 'fn':
         default:

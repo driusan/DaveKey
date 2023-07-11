@@ -38,16 +38,16 @@ test('can not use native MFM for mathBlock', () => {
 test('can not use native MFM for small', () => {
     expect(canUseNativeMFM("<small>foo</small>")).toEqual(false);
 });
-test('can not use native MFM for quote', () => {
-    expect(canUseNativeMFM("> foo bar")).toEqual(false);
+test('can use native MFM for quote', () => {
+    expect(canUseNativeMFM("> foo bar")).toEqual(true);
 });
-test('can not use native MFM for emojiCode', () => {
+test('can use native MFM for emojiCode', () => {
     expect(canUseNativeMFM(":testEmoji:")).toEqual(true);
 });
 test('can use native MFM for inlineCode', () => {
     expect(canUseNativeMFM("`<: \"Hello, world!\"`")).toEqual(true);
 });
-test('can not use native MFM for block code', () => {
+test('can use native MFM for block code', () => {
     expect(canUseNativeMFM(`\`\`\`
 ~ (#i, 100) {
 	<: ? ((i % 15) = 0) "FizzBuzz"
@@ -56,7 +56,7 @@ test('can not use native MFM for block code', () => {
 		. i
 }
 \`\`\`
-`)).toEqual(false);
+`)).toEqual(true);
 });
 test('can not use native MFM for centering', () => {
     expect(canUseNativeMFM("<center>Centered text</center>")).toEqual(false);
