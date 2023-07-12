@@ -1,13 +1,25 @@
+Posting
+   - visibility
+   - attach poll
+   - CW
+   - attach image
+   - inline GUI editor?
+        - bold
+        - italic
+        - emoji picker
+        - url / link
+        - quote
+
 Improve styling of threads
     - fix order
     - fix notification
     - scroll to post on thread load
 CWs when applicable
 Add refresh icon in header
-Notifications
-    - actions (reply/like) in notification
 Hashtag - search for users
 WebSocket subscription 
+Pinned posts on profiles
+Follow / Unfollow users
 
 Missing CalcKey features:
 - Chat
@@ -16,9 +28,15 @@ Missing CalcKey features:
 - Channels
 - Search
 - Drive
+    - Need before attach image to post?
+    - Mount locally on device?
 - Announcements
+    - Separate page (all announcements)
+    - Pinned to top of timelines (unacknowledged announcements)
 - Lists
 - Antennas
+    - Separate page with list
+    - Also include in drawer
 - Pages
 - Galleries
 - Clips

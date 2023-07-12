@@ -1,5 +1,5 @@
 import MFM from './MFM';
-import { Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal } from 'react-native';
+import { Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal, PanResponder } from 'react-native';
 import { useRef, useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -12,8 +12,9 @@ import { AccountContext} from './Account';
 import { ServerContext} from './contexts';
 import { useAPI } from './api';
 import { Video, ResizeMode } from 'expo-av';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
-function PostImage({url, imageHeight, imageWidth}) {
+function PostImage({url, imageHeight, imageWidth, postImages}) {
     const [displayModal, setDisplayModal] = useState(false);
     const modal = () => {
         if (displayModal == false) {
@@ -23,16 +24,35 @@ function PostImage({url, imageHeight, imageWidth}) {
         const height = imageHeight > dims.height ? dims.height : imageHeight;
         return <Modal animationType="fade" transparent={true}>
             <View style={{backgroundColor: 'rgba(0, 0, 0, 0.8)', height: dims.height, width: dims.width}}>
-                    <Pressable onPress={() => setDisplayModal(false) }>
-                        <Image
+               <ImageViewer 
+                onCancel={() => setDisplayModal(false)}
+                imageUrls={postImages}
+                saveToLocalByLongPress={false}
+                enableSwipeDown={true}
+                useNativeDriver={true}
+                />
+            </View>
+    </Modal>; 
+    };
+
+/*
+                   <Animated.View
+                       style={
+                        {transform: [
+                            {translateX: changeX},
+                            {translateY: changeY}
+                         ]
+                        }
+                       }
+                       {...panResponder.panHandlers}>
+                   <Image
                            height={height}
                            source={{ uri: url}}
                            resizeMode={'contain'}
-                           resizeMethod={'auto'} />
-                    </Pressable>
-            </View>
-    </Modal>; 
-    }
+                           resizeMethod={'auto'} 
+                    />
+                    </Animated.View>
+                    */
     return (<View>
         {modal()}
         <Pressable onPress={() => { setDisplayModal(true) }}>
@@ -327,10 +347,15 @@ export function Post(props) {
                 shouldPlay={true}
                 resizeMode={ResizeMode.CONTAIN}
                 isLooping
+                isMuted
             />;
             return <View key={i}><Text>Unhandled video type {file.type}</Text></View>;
         } else if (file.type.startsWith('image/')) {
-            return <PostImage key={i} url={file.url} imageWidth={file.properties.width} imageHeight={file.properties.height} />;
+            return <PostImage key={i} index={i} postImages={
+                    props.content.files.map((file, i) => {
+                        return { url: file.url }
+                })}
+                url={file.url} imageWidth={file.properties.width} imageHeight={file.properties.height} />;
         } else {
             return <View key={i}><Text>Unhandled attachment type {file.type}</Text></View>;
         }
