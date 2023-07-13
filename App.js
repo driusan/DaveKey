@@ -16,6 +16,7 @@ import {Thread} from './Thread';
 import { MenuProvider} from 'react-native-popup-menu';
 import { useNotifications, NotificationsPage } from './Notifications';
 import { DrivePage } from './Drive';
+import { AnnouncementsPage } from './Announcements';
 import * as Notifications from 'expo-notifications';
 import { ServerContext } from './contexts';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -109,6 +110,7 @@ function ActionsDrawer() {
               <Drawer.Screen name="Home" component={ActionsStack} />
               <Drawer.Screen name="Notifications" component={NotificationsPage} />
               <Drawer.Screen name="Drive" component={DrivePage} />
+              <Drawer.Screen name="Announcements" component={AnnouncementsPage} />
               <Drawer.Screen name="Logout" component={Logout} />
           </Drawer.Navigator>
       );

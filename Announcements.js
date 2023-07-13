@@ -1,61 +1,70 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Button, Image, FlatList, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@react-navigation/native';
+import {useState, useEffect} from 'react';
+import {useAPI} from './api';
 
+export function AnnouncementsPage({navigation, route}) {
+    const api = useAPI();
+    const theme = useTheme().colors;
+    const [announcements, setAnnouncements] = useState(null);
+    const [forceRefresh, setForceRefresh] = useState(0);
+    useEffect( () => {
+        api.call("announcements", {}).then(
+            (json) => {
+                setAnnouncements(json);
+            }
+        );
+            //    fetch('https://' + instance + "/api/announcements",
+    }, [forceRefresh]);
+    return <DisplayAnnouncements announcements={announcements} refresh={() => setForceRefresh(forceRefresh+1)}/>
+}
 function Announcement(props) {
+    const theme = useTheme().colors;
+    const api = useAPI();
+    console.log(props);
+    const image = props.imageUrl ? <View style={{padding: 10}}><Image style={{height: 200}} resizeMode="contain" source={{uri: props.imageUrl}} /></View> : <View />
+    console.log(image);
+    console
+    const actions = props.isRead ? <View /> : <View>
+        <Button title="Got it!" onPress={ () => {
+            api.call("i/read-announcement", {announcementId: props.id}).then(
+                () => props.refresh()
+            );
+        }}/>
+    </View>
     return (
-      <View>
-        <View>
-          <Text style={styles.header}>{props.title}</Text>
-          <Text>{props.datetime}</Text>
+      <View style={{backgroundColor: theme.card, padding: 20, margin: 10}}>
+        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginBottom: 15, flexWrap: 'wrap'}}>
+          <Text style={{...styles.header, color: theme.primary}}>{props.title}</Text>
+          <Text style={{color: theme.text}}>{props.createdAt}</Text>
         </View>
-        <Text>{props.text}</Text>
+        <Text style={{color: theme.text}}>{props.text}</Text>
+        {image}
+        {actions}
       </View>
     );
 }
-export function DisplayAnnouncements(props) {
-    return (
-      <View style={styles.container}>
-        {props.announcements.map((a) => {
-            return <Announcement title={a.title}
-                key={a.id}
-                text={a.text}
-                image={a.imageUrl}
-                datetime={a.updatedAt}
-                />
-            })
-        }
-      </View>
-    );
+export function DisplayAnnouncements({announcements, refresh}) {
+    const theme = useTheme().colors;
+    if (announcements == null) {
+        return <View style={styles.container}>
+            <Text style={{color: theme.primary}}>Getting announcements from server...</Text>
+        </View>
+    }
+    return <FlatList style={{padding: 10}} data={announcements}
+        ListEmptyComponent={<View style={styles.container}>
+            <Text style={{color: theme.primary}}>No announcements to display</Text>
+        </View>}
+        renderItem={({item}) => <Announcement {...item} refresh={refresh} />}
+    />;
 }
-
- // const getAnnouncements = () => {
-  //    fetch('https://' + instance + "/api/announcements",
-   //   {
-    //      method: 'POST',
-     //     headers: {
-      //        Accept: 'application/json',
-      //    },
-   //   }).then((resp) => resp.json())
-    //  .then((json) => {
-     //   setAnnouncements(json);
-    //  })
-   //   .catch((error) => console.log(error));
- // };
-// }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     flexFlow: 'space-between',
     justifyContent: 'center',
     alignItems: 'center',
-    flexDirection: 'column',
-    width: '100%',
-  },
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    flexFlow: 'space-between',
     flexDirection: 'column',
     width: '100%',
   },
@@ -63,60 +72,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 20,
   },
-  instanceLabel: {
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    fontWeight: 'bold',
-    fontSize: 20,
-    textAlign: 'center',
-    width: '80%',
-  },
-  instanceInput: {
-    borderStyle: 'solid',
-    borderColor: 'black',
-    borderWidth: 1,
-    marginTop: 10,
-    width: '80%',
-    padding: 5,
-  },
-  loginButton: {
-    width: '80%',
-    marginTop: 10,
-  },
-  post: {
-    flex: 1,
-    color: '#000',
-    backgroundColor: '#eee',
-  },
-  postContainer: {
-    flex: 1,
-    color: '#000',
-    backgroundColor: '#eee',
-    borderColor: 'black',
-    borderStyle: 'solid',
-    borderWidth: 1,
-    padding: 10,
-  },
-  postMetaContainer: {
-    flex: 1,
-    color: '#000',
-    backgroundColor: '#eee',
-    padding: 10,
-    alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-  },
-  flipped: {
-      transform: [{scaleX: -1}],
-  },
-  postTime: {
-      flex: 1,
-  },
-  postAuthor: {
-      flex: 4,
-  },
-  flexer: {
-      flex: 1,
-  }
 });

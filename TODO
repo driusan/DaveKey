@@ -34,7 +34,6 @@ Missing CalcKey features:
         - Last onProgress doesn't always fire to update status?
     - should check if file is used before delete and prompt for a confirmation
 - Announcements
-    - Separate page (all announcements)
     - Pinned to top of timelines (unacknowledged announcements)
 - Lists
 - Antennas
