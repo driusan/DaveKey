@@ -717,6 +717,9 @@ function WebViewMFM(props) {
 }
 
 export default function MFM(props) {
+    if (props.text == null) {
+        return <View />;
+    }
     switch (props.engine || '') {
     case 'native':
         return <NativeMFM {...props} loadProfileFN={props.loadProfile}/>;

@@ -176,8 +176,11 @@ Notifications.addNotificationResponseReceivedListener(response => {
       console.log('unhandled action', response.actionIdentifier);
     }
     break;
+  case 'download':
+    console.log(response);
+    break;
   default:
-    console.log('Unhandled notification category' + content.categoryIdentifier);
+    console.log('Unhandled notification category: ' + content.categoryIdentifier);
   }
 });
 

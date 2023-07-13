@@ -67,6 +67,8 @@ function useKeyAppSecret(instance) {
                 "read:notifications",
                 "write:reactions",
                 "write:votes",
+                "read:drive",
+                "write:drive",
             ],
             callbackUrl: Linking.createURL('loginsuccess', {})//'https://' + instance + '/?loginsuccess=true',
          }),

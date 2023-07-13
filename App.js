@@ -1,5 +1,5 @@
 import { DrawerActions } from '@react-navigation/native';
-import { Linking, useColorScheme } from 'react-native';
+import { Alert, Linking, useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
@@ -15,10 +15,11 @@ import { MyProfile, OtherProfile } from './Profile';
 import {Thread} from './Thread';
 import { MenuProvider} from 'react-native-popup-menu';
 import { useNotifications, NotificationsPage } from './Notifications';
+import { DrivePage } from './Drive';
 import * as Notifications from 'expo-notifications';
 import { ServerContext } from './contexts';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import {useAPI} from './api';
+import {useAPI, useAPIPaginator} from './api';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -86,92 +87,34 @@ function ActionsDrawer() {
       const navigation = useNavigation();
       const theme = useTheme().colors;
       const name = account.mentionName();
-      const profileLink = null; /* name == '' ? null :
-        <Drawer.Screen name={account.mentionName()} component={MyProfile} />; */
+      const profileLink = null; 
       return (
           <Drawer.Navigator 
               id="drawer" 
-              screenOptions={{
-              headerLeft: () => {
-                  const onPress = () => navigation.dispatch(DrawerActions.openDrawer());
-                  return (
-                    <View>
-                        <Pressable onPress={onPress}>
-                          <AntDesign name="bars" size={36} color={theme.text} />
-                        </Pressable>
-                    </View>
-                  );
-              }
+              screenOptions={ ({navigation, route}) => {
+                return {
+                    headerLeft: () => {
+                      const onPress = () => navigation.dispatch(DrawerActions.openDrawer());
+                      return (
+                        <View style={{paddingLeft: 5}}>
+                            <Pressable onPress={onPress}>
+                              <AntDesign name="bars" size={36} color={theme.text} />
+                            </Pressable>
+                        </View>
+                      );
+                  },
+                };
               }}>
               {profileLink}
               <Drawer.Screen name="Home" component={ActionsStack} />
               <Drawer.Screen name="Notifications" component={NotificationsPage} />
+              <Drawer.Screen name="Drive" component={DrivePage} />
               <Drawer.Screen name="Logout" component={Logout} />
           </Drawer.Navigator>
       );
 }
 
 
-function useAPIPaginator(endpoint, params) {
-  const api = useAPI();
-  const [data, setData] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshNo, setRefreshNo] = useState(0);
-
-  const loadMore = (since, until) => {
-      if (!api) {
-          return;
-      }
-      const newParams = {...params};
-      if (until) {
-          newParams['untilId'] = until;
-      }
-      if (since) {
-          newParams['sinceId'] = since;
-      }
-      api.call(endpoint, newParams)
-        .then( (json) => {
-          if (json.error) {
-              throw new Error(json);
-          }
-          if (until !== null) {
-              setData([...data, ...json]);
-          } else if (since !== null) {
-              setData([...json, ...data]);
-          } else {
-              setData([...json]);
-          }
-
-          setRefreshing(false);
-      }).catch( (e) => {
-          setRefreshing(false);
-          console.error('error loading ', refreshNo);
-          console.error(e)
-      });
-  }
-  useEffect( () => {
-      loadMore(null, null);
-  }, [endpoint, refreshNo]);
-
-  return {
-      data: data,
-      isRefreshing: refreshing,
-      refresh: () => {
-          setRefreshNo(refreshNo+1);
-      },
-      moreBefore: () => {
-          if (posts) {
-              loadMore(data[0].id, null);
-          }
-      },
-      moreAfter: () => {
-          if (data) {
-              console.log(data[data.length-1].id);
-              loadMore(null, data[data.length-1].id);
-          }
-      }
-  };
-}
 function useTimeline(account, type) {
   const [posts, setPosts] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
