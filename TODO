@@ -20,6 +20,8 @@ CWs when applicable
 Add refresh icon in header
 Hashtag - search for users
 WebSocket subscription 
+    - update notification count in Drawer when unreadNotification
+      or readAllNotifications comes in
 Pinned posts on profiles
 Follow / Unfollow users
 

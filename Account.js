@@ -1,10 +1,72 @@
-import {useState,useEffect, createContext } from 'react';
+import {useRef, useCallback, useState,useEffect, createContext } from 'react';
 import {Alert, ToastAndroid} from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as DocumentPicker from 'expo-document-picker';
 
 export const AccountContext = createContext(null);
 
+function websocketMessageHandler(timelineCB) {
+    return (e) => {
+          // FIXME: Delegate appropriately
+          // channels are documented at https://misskey-hub.net/en/docs/api/streaming/channel/
+          console.log('message', e.data);
+          const body = JSON.parse(e.data).body;
+          console.log('message', e.data);
+          if (body.id === 'mainChannel') {
+              console.log('body', body);
+              switch(body.type) {
+              case 'unreadNotification':
+                // FIXME: Increase count in sidebar
+                ToastAndroid.show('New notification', ToastAndroid.SHORT);
+                break;
+              case 'readAllNotifications':
+                // FIXME: Set count in sidebar
+              }
+          } else if (body.id === 'timelineChannel') {
+              console.log('msg on timeline', body.body, 'cb', timelineCB);
+              if (timelineCB) {
+                  timelineCB(body.body);
+              }
+          }
+  }
+}
+
+export function useWebSocket(instance, token) {
+  const ws = useRef(null);
+  useEffect( () => {
+      if (!instance || !token) {
+          return;
+      }
+      console.log('Creating websocket connection');
+      if (!ws.current) {
+          ws.current = new WebSocket("wss://" + instance + "/streaming?i=" + token);
+      }
+
+      ws.current.onopen = () => {
+        ws.current.send(JSON.stringify({
+          type: 'connect',
+          body: {
+            'channel': 'main',
+            'id': 'mainChannel',
+          }
+        }));
+      };
+      ws.current.onmessage = websocketMessageHandler();
+      ws.current.onerror = (e) => {
+          console.error(e.message);
+      }
+      ws.current.onclose = (e) => {
+          console.log(e.code, e.reason);
+      }
+      const wsCurrent = ws.current;
+      return () => {
+          if (wsCurrent) {
+              wsCurrent.close();
+        }
+      }
+  }, [instance, token]);
+  return ws.current;
+} 
 export function useCalckeyAccount() {
   const [lastUpload, setLastUpload] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
@@ -18,6 +80,30 @@ export function useCalckeyAccount() {
           setInstance(val);
       });
   }, []);
+  const socket = useWebSocket(instance, accessToken);
+  useEffect( () => {
+    if (!socket) {
+        console.log('Socket not connected');
+        return;
+    }
+    console.log('Connecting to main');
+
+    socket.addEventListener('message', (e) => {
+          // channels are documented at https://misskey-hub.net/en/docs/api/streaming/channel/
+          const body = JSON.parse(e.data).body;
+          if (body.id === 'mainChannel') {
+              console.log('body', body);
+              switch(body.type) {
+              case 'unreadNotification':
+                // FIXME: Increase count in sidebar
+                ToastAndroid.show('New notification', ToastAndroid.SHORT);
+                break;
+              case 'readAllNotifications':
+                // FIXME: Set count in sidebar
+              }
+          } 
+    });
+  }, [socket]);
   useEffect(() => {
       // Fetch profile info after login
       if (!accessToken || !instance) {
@@ -193,5 +279,6 @@ export function useCalckeyAccount() {
     // this doesn't belong here, but is exported so that the useDrive hook
     // knows if it needs to re-load
     lastUpload: lastUpload,
+    ws: socket,
   };
 }

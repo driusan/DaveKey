@@ -67,11 +67,12 @@ function PostImage({url, imageHeight, imageWidth, postImages}) {
 }
 function Poll({choices, noteid}) {
     const api = useAPI();
+    const theme = useTheme().colors;
     const choicesViews = choices.map( (option, i) => {
         // console.log(option);
-        const textStyle = option.isVoted ? { fontWeight: 'bold'} : {};
+        const textStyle = option.isVoted ? { fontWeight: 'bold', color: theme.primary} : {color: theme.text};
         return (
-          <View style={{borderWidth: 1, padding: 5, margin: 2}}
+          <View style={{borderWidth: 1, padding: 5, margin: 2, borderColor: theme.border, backgroundColor: theme.background}}
             key={option.text}>
             <Pressable onPress={() => {
                 console.log(i, noteid);

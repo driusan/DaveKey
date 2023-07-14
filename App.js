@@ -10,7 +10,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation, NavigationContainer, DefaultTheme, DarkTheme, useTheme} from '@react-navigation/native';
-import { AccountContext, useCalckeyAccount} from './Account';
+import { useWebSocket, AccountContext, useCalckeyAccount} from './Account';
 import { MyProfile, OtherProfile } from './Profile';
 import {Thread} from './Thread';
 import { MenuProvider} from 'react-native-popup-menu';
@@ -119,8 +119,62 @@ function ActionsDrawer() {
 
 function useTimeline(account, type) {
   const [posts, setPosts] = useState(null);
+  const [streamedPosts, setStreamedPosts] = useState({
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNo, setRefreshNo] = useState(0);
+  const onMessage = useCallback( (e) => {
+          console.log('Received message');
+          const body = JSON.parse(e.data).body;
+          if (body.id === 'timelineChannel') {
+              console.log('msg on timeline', body.body);
+              setStreamedPosts([body.body, ...streamedPosts]);
+          }
+          console.log('event listener in useTimeline', e);
+  }, [streamedPosts, type]);
+  useEffect( () => {
+      if (!account.ws) {
+          console.log('No websocket');
+          return;
+      }
+      const ws = account.ws;
+      const tlName = type + 'Timeline';
+      console.log('Subscribing to websocket', '"' + type + 'Timeline"')
+      ws.send(JSON.stringify({
+        type: 'connect',
+        body: {
+          'channel': type + 'Timeline',
+          'id': type + 'Timeline',
+          'params': { },
+        }
+      }));
+  }, [account, type, account.ws]);
+
+  useEffect( () => {
+      if (!account.ws) {
+          return;
+      }
+      console.log('Adding event listener');
+      const onMessage = (e) => {
+          console.log('Received message');
+          const body = JSON.parse(e.data).body;
+          if (body.id === type + 'Timeline') {
+              console.log('msg on timeline ', type, body.body);
+              if(!streamedPosts[type]) {
+                  streamedPosts[type] = [body.body];
+              } else {
+                  streamedPosts[type] = [body.body, ...streamedPosts[type]];
+              }
+              console.log('setting streamed posts', streamedPosts);
+              setStreamedPosts({...streamedPosts});
+          }
+          console.log('event listener in useTimeline', e);
+      };
+      account.ws.addEventListener('message', onMessage);
+      return () => {
+          account.ws.removeEventListener("message", onMessage);
+      }
+  }, [account.ws, streamedPosts, type]);
 
   const loadMore = (since, until) => {
       if (!account || !account.instance) {
@@ -186,8 +240,15 @@ function useTimeline(account, type) {
       loadMore(null, null);
   }, [account.instance, account.i, type, refreshNo]);
   return {
+      unreadPosts: streamedPosts,
       posts: posts,
       isRefreshing: refreshing,
+      addUnreadPosts: () => {
+          console.log(type, streamedPosts);
+          setPosts([...streamedPosts[type], ...posts]);
+          streamedPosts[type] = [];
+          setStreamedPosts({...streamedPosts});
+      },
       refreshTimeline: () => {
           setRefreshNo(refreshNo+1);
       },
@@ -376,11 +437,12 @@ function Timelines() {
 }
 function Timeline({navigation, route}) {
   const account = useContext(AccountContext);
+  const theme = useTheme().colors;
   const timeline = useTimeline(account, route.params?.timelineType);
   const [includeBoosts, setIncludeBoosts] = useState(true);
   const [postModalVisible, setPostModalVisible] = useState(false);
   const [postReplyId, setPostReplyId] = useState(null);
-  console.log(route);
+  console.log(route, route.params?.timelineType);
 
   const onRefresh = useCallback(() => {
       timeline.moreBefore();
@@ -396,6 +458,7 @@ function Timeline({navigation, route}) {
 
   let refreshControl = <RefreshControl refreshing={timeline.isRefreshing} onRefresh={onRefresh} enabled={true}/>;
   const displayedposts = includeBoosts ? timeline.posts : timeline.posts.filter((post) => post.text);
+  const unreadPostNum = timeline.unreadPosts[route.params?.timelineType]?.length || 0
   return (
     <View style={{flex: 1}}>
         <FlatList
@@ -411,6 +474,11 @@ function Timeline({navigation, route}) {
              <View>
                <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
                 <BoostSelect withBoosts={includeBoosts} setWithBoosts={setIncludeBoosts} />
+                {unreadPostNum > 0 ? (
+                    <View style={{backgroundColor: theme.background}}>
+                        <Button title={"Load " + unreadPostNum + " new posts"} onPress={timeline.addUnreadPosts} />
+                    </View>) : <View />
+                }
              </View>
            }
            ListFooterComponent={<Button title="Load more" onPress={timeline.moreAfter} />}
