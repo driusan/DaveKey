@@ -8,9 +8,9 @@ import {PostModal, FlatListPost} from './Posts';
 // lists
 // antenna
 // bookmarks
+// search
 //
 // todo:
-// search
 // clips
 // channels 
 
@@ -67,6 +67,9 @@ export function PaginatedPostList({endpoint, params, emptyMsg, extractNote}) {
     const [postReplyId, setPostReplyId] = useState(null);
 
   let refreshControl = <RefreshControl refreshing={posts.isRefreshing} onRefresh={posts.refresh} enabled={true}/>;
+   if (posts.data === null) {
+       return <View><Text style={{color: theme.primary}}>Loading..</Text></View>;
+   }
    return (<View>
         <FlatList
            data={posts.data}

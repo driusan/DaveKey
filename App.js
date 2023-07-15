@@ -24,6 +24,7 @@ import {useAPI, useAPIPaginator} from './api';
 import {ListsPage} from './Lists';
 import {AntennasPage} from './Antennas';
 import {BookmarksPage} from './Bookmarks';
+import {SearchPage} from './Search';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -76,16 +77,26 @@ function ActionsDrawer() {
               id="drawer" 
               screenOptions={ ({navigation, route}) => {
                 return {
-                    headerLeft: () => {
-                      const onPress = () => navigation.dispatch(DrawerActions.openDrawer());
-                      return (
-                        <View style={{paddingLeft: 5}}>
-                            <Pressable onPress={onPress}>
-                              <AntDesign name="bars" size={36} color={theme.text} />
-                            </Pressable>
-                        </View>
-                      );
+                  headerLeft: () => {
+                    const onPress = () => navigation.dispatch(DrawerActions.openDrawer());
+                    return (
+                      <View style={{paddingLeft: 5}}>
+                        <Pressable onPress={onPress}>
+                          <AntDesign name="bars" size={36} color={theme.text} />
+                        </Pressable>
+                      </View>
+                    );
                   },
+                  headerRight: () => {
+                    const onPress = () => navigation.navigate("Search");
+                    return (
+                      <View style={{paddingRight: 15}}>
+                        <Pressable onPress={onPress}>
+                          <AntDesign name="search1" size={24} color={theme.text} />
+                        </Pressable>
+                      </View>
+                    );
+                  }
                 };
               }}>
               {profileLink}
@@ -96,6 +107,7 @@ function ActionsDrawer() {
               <Drawer.Screen name="Bookmarks" component={BookmarksPage} />
               <Drawer.Screen name="Lists" component={ListsPage} />
               <Drawer.Screen name="Antennas" component={AntennasPage} />
+              <Drawer.Screen name="Search" component={SearchPage} />
               <Drawer.Screen name="Logout" component={Logout} />
           </Drawer.Navigator>
       );
