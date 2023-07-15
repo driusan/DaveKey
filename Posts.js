@@ -349,13 +349,13 @@ export function Post(props) {
     const navigation = useNavigation();
     const api = useAPI();
     const theme = useTheme().colors;
-    const content = useCW(props.cw, props.text, props.emojis, props.onHashtag, props.onProfileClick);
     const loadThread = useCallback( () => {
       if (navigation && navigation.push) {
         console.log("Pushing thread", props.noteid);
         navigation.push("Thread", { PostId: props.noteid});
       }
     }, [props.noteid]);
+    const content = useCW(props.cw, props.text, props.emojis, loadThread, props.onHashtag, props.onProfileClick);
     // FIXME: Come up with a more robust regex
     const urlRE = /https?:\/\/[\w./\-?+]+/g;
     const thetext = props.text || ''
@@ -421,14 +421,14 @@ export function Post(props) {
                return (
                  <View key={val} style={{flexDirection: 'row', flexWrap: 'nowrap', paddingRight: 20, alignItems: 'center'}}>
                    {reactionImage}
-                   <Text style={{fontSize: 24}}>{props.content.reactions[val]}</Text>
+                   <Text style={{color: theme.text, fontSize: 24, marginLeft: 5}}>{props.content.reactions[val]}</Text>
                  </View>
                );
 
            }
            return <View key={val} style={{flexDirection: 'row', flexWrap: 'nowrap', paddingRight: 20}}>
                         <Text style={{fontSize: 24}}>{val}</Text>
-                        <Text style={{fontSize: 24}}>{props.content.reactions[val]}</Text>
+                        <Text style={{color: theme.text, fontSize: 24, marginLeft: 5}}>{props.content.reactions[val]}</Text>
                   </View>;
          })}
        </View>
