@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
 import {useState,useEffect, useCallback, useContext, useRef} from 'react';
-import { FlatListPost, PostModal, UserList } from './Posts';
+import { FlatListPost, PostModal, UserList, PaginatedPostList } from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -21,6 +21,9 @@ import * as Notifications from 'expo-notifications';
 import { ServerContext } from './contexts';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {useAPI, useAPIPaginator} from './api';
+import {ListsPage} from './Lists';
+import {AntennasPage} from './Antennas';
+import {BookmarksPage} from './Bookmarks';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -42,33 +45,12 @@ function ActionsStack() {
 }
 
 function HashtagPage({navigation, route}) {
-    const account = useContext(AccountContext);
     const tag = route.params?.Tag;
     // hashtags/users doesn't support pagination
-    const posts = useAPIPaginator("notes/search-by-tag", {tag: tag});
-    const [postModalVisible, setPostModalVisible] = useState(false);
-    const [postReplyId, setPostReplyId] = useState(null);
-
-  let refreshControl = <RefreshControl refreshing={posts.isRefreshing} onRefresh={posts.refresh} enabled={true}/>;
-   return (<View>
-        <FlatList
-           data={posts.data}
-           renderItem={({item}) => <FlatListPost post={item} 
-              doReply={(postId) => { setPostReplyId(postId); setPostModalVisible(true); }}
-              onProfileClick={() => {}}
-           />}
-           ListHeaderComponent={
-             <View>
-               <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
-             </View>
-           }
-           ListFooterComponent={<Button title="Load more" onPress={posts.moreAfter} />}
-           refreshControl={refreshControl}
-           stickyHeaderIndices={[0]}
-           stickyHeaderHiddenOnScroll={true}
-        />
-      </View>);
-    return <View><UserList users={users.data} onProfileClick={() => {}} tag={tag} loadMore={users.moreAfter}/></View>;
+    return <PaginatedPostList 
+        endpoint="notes/search-by-tag"
+        params={{tag: tag}}
+    />;
 }
 function Logout({navigation}) {
     const account = useContext(AccountContext);
@@ -111,6 +93,9 @@ function ActionsDrawer() {
               <Drawer.Screen name="Notifications" component={NotificationsPage} />
               <Drawer.Screen name="Drive" component={DrivePage} />
               <Drawer.Screen name="Announcements" component={AnnouncementsPage} />
+              <Drawer.Screen name="Bookmarks" component={BookmarksPage} />
+              <Drawer.Screen name="Lists" component={ListsPage} />
+              <Drawer.Screen name="Antennas" component={AntennasPage} />
               <Drawer.Screen name="Logout" component={Logout} />
           </Drawer.Navigator>
       );

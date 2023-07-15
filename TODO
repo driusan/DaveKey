@@ -23,13 +23,6 @@ WebSocket subscription
       or readAllNotifications comes in
 Pinned posts on profiles
 Follow / Unfollow users
-
-Missing CalcKey features:
-- Chat
-- Explore
-- Bookmarks
-- Channels
-- Search
 - Drive
     - Upload
         - Last onProgress doesn't always fire to update status?
@@ -37,9 +30,21 @@ Missing CalcKey features:
 - Announcements
     - Pinned to top of timelines (unacknowledged announcements)
 - Lists
+    - Should be able to edit or define new lists
+    - Menu page isn't very pretty
 - Antennas
-    - Separate page with list
-    - Also include in drawer
+    - Should be able to edit or define new antennas
+    - should graphically show hasUnreadNote in menu
+    - Menu page isn't very pretty
+- Bookmarks
+    - remove bookmark instead of adding if already bookmarked
+
+
+Missing CalcKey features:
+- Chat
+- Explore
+- Channels
+- Search
 - Pages
 - Galleries
 - Clips

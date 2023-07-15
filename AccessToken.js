@@ -69,6 +69,8 @@ function useKeyAppSecret(instance) {
                 "write:votes",
                 "read:drive",
                 "write:drive",
+                "read:favorites",
+                "write:favorites",
             ],
             callbackUrl: Linking.createURL('loginsuccess', {})//'https://' + instance + '/?loginsuccess=true',
          }),

@@ -1,5 +1,5 @@
 import MFM from './MFM';
-import { Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal, PanResponder } from 'react-native';
+import { Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal, PanResponder, RefreshControl } from 'react-native';
 import { useRef, useContext, useCallback, useState } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -10,7 +10,7 @@ import { MenuOptions, MenuOption, Menu, MenuTrigger} from 'react-native-popup-me
 import * as Linking from 'expo-linking';
 import { AccountContext} from './Account';
 import { ServerContext} from './contexts';
-import { useAPI } from './api';
+import { useAPI, useAPIPaginator } from './api';
 import { Video, ResizeMode } from 'expo-av';
 import ImageViewer from 'react-native-image-zoom-viewer';
 
@@ -271,6 +271,14 @@ function PostMenu(props) {
             Alert.alert('Liked post');
         }).catch( (e) => console.warn(e));
       }} text="Like" />);
+      options.push(<MenuOption key="bookmark" onSelect={() => {
+        api.call("notes/favorites/create", {
+          noteId: props.PostId,
+        }).then ( (json) => {
+            //console.log(json);
+            Alert.alert('Bookmarked post');
+        }).catch( (e) => console.warn(e));
+      }} text="Bookmark" />);
     }
 
     return (
