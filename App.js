@@ -25,6 +25,9 @@ import {ListsPage} from './Lists';
 import {AntennasPage} from './Antennas';
 import {BookmarksPage} from './Bookmarks';
 import {SearchPage} from './Search';
+import {GalleriesPage} from './Gallery';
+import { PaperProvider, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
+
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -107,6 +110,7 @@ function ActionsDrawer() {
               <Drawer.Screen name="Bookmarks" component={BookmarksPage} />
               <Drawer.Screen name="Lists" component={ListsPage} />
               <Drawer.Screen name="Antennas" component={AntennasPage} />
+              <Drawer.Screen name="Galleries" component={GalleriesPage} />
               <Drawer.Screen name="Search" component={SearchPage} />
               <Drawer.Screen name="Logout" component={Logout} />
           </Drawer.Navigator>
@@ -322,11 +326,16 @@ export default function App() {
         }).catch( (e) => console.error(e));
     }, [account.instance]);
 
+    const { LightTheme, DarkTheme } = adaptNavigationTheme({
+        reactNavigationLight: getTheme(false),
+        reactNavigationDark: getTheme(true),
+    });
     const screen = (!account || !account.i) ? <GetToken /> : <ActionsDrawer account={account}/>;
     return (
       <AccountContext.Provider value={account}>
       <ServerContext.Provider value={serverMeta}>
       <MenuProvider style={{flex: 1}}>
+        <PaperProvider>
         <NavigationContainer
            theme={getTheme(theme=='dark')}
            linking={{
@@ -361,6 +370,7 @@ export default function App() {
         }}>
             {screen}
         </NavigationContainer>
+        </PaperProvider>
       </MenuProvider>
       </ServerContext.Provider>
       </AccountContext.Provider>

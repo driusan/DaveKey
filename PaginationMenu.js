@@ -36,7 +36,7 @@ function MenuItem({title, id, name, navname, idkey}) {
   );
 }
 
-export function PaginatedMenuPage({listendpoint, idkey, navname}) {
+export function PaginatedMenuPage({listendpoint, idkey, navname, renderItem}) {
     const api = useAPI();
     const [menus, setMenus] = useState([]);
     useEffect( () => {
@@ -50,9 +50,8 @@ export function PaginatedMenuPage({listendpoint, idkey, navname}) {
     return <FlatList 
                data={menus}
                renderItem={
-                   ({item}) => <MenuItem {...item} idkey={idkey} navname={navname}/>
+                  ({item}) => (renderItem ? renderItem(item) : <MenuItem {...item} idkey={idkey} navname={navname}/>)
                }
-
                ItemSeparatorComponent={
                    () => <View style={{padding: 5}} />
                }
