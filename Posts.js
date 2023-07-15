@@ -309,10 +309,39 @@ function PostHeader(props) {
       </View>
     );
 }
+
+function useCW(cw, content, emojis, loadThread, onHashtag, onProfileClick) {
+    const [CWMode, setCWMode] = useState(cw ? 'hide' : 'show');
+    // console.log(cw, CWMode)
+
+    if (CWMode == 'show') {
+        if (content) {
+            return (<View>
+            <MFM onClick={loadThread}
+                 onHashtagClicked={onHashtag}
+                 text={content} emojis={emojis}
+                loadProfile={onProfileClick}/> 
+                {cw ? <View style={{marginTop: 10}}><Button onPress={() => setCWMode('hide')} title="Hide content"/></View> : <View />}
+            </View>)
+        }
+        return '';
+    }
+
+    return <View>
+        <MFM onClick={() => setCWMode('show')}
+                text={'**CW:** ' + cw}
+                emojis={emojis}
+                />
+                <View style={{marginTop: 10}}>
+            <Button onPress={() => setCWMode('show')} title="Show content"/>
+            </View>
+        </View>
+}
 export function Post(props) {
     const navigation = useNavigation();
     const api = useAPI();
     const theme = useTheme().colors;
+    const content = useCW(props.cw, props.text, props.emojis, props.onHashtag, props.onProfileClick);
     const loadThread = useCallback( () => {
       if (navigation && navigation.push) {
         console.log("Pushing thread", props.noteid);
@@ -396,7 +425,7 @@ export function Post(props) {
          })}
        </View>
        ) : <View />;
-    const text = props.text ? <MFM onClick={loadThread} onHashtagClicked={onHashtag} text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
+    const text = content; // props.text ? <MFM onClick={loadThread} onHashtagClicked={onHashtag} text={props.text} emojis={props.emojis} loadProfile={props.onProfileClick}/> : '';
     const poll = props.content.poll ? <Poll choices={props.content.poll.choices} expiresAt={props.content.poll.expiresAt} multiple={props.content.poll.multiple} noteid={props.noteid} /> : null;
     if (props.reply) {
         return (
@@ -560,6 +589,7 @@ export function FlatListPost(props) {
     if (p.text && p.renote) {
         // QT
         return <Post
+                        cw={p.cw}
                         uri={p.uri}
                         noteid={p.id}
                         text={p.text} 
@@ -579,6 +609,7 @@ export function FlatListPost(props) {
             // Plain post
             //console.log(p.emojis);
             return <Post 
+                cw={p.cw}
                 uri={p.uri}
                 noteid={p.id}
                 text={p.text} 
@@ -609,6 +640,7 @@ export function FlatListPost(props) {
                   <PostVisibility visibility={p.visibility} />
                 </View>
                 <Post uri={p.uri}
+                    cw={p.cw}
                     text={p.renote.text} 
                     noteid={p.renote.id}
                     time={p.createdAt}
@@ -627,6 +659,7 @@ export function FlatListPost(props) {
             if (p.files) {
                 // no text, but had file or image attached. Treat it as a post
                 return <Post uri={p.uri}
+                    cw={p.cw}
                     text={p.text} 
                     time={p.createdAt}
                     noteid={p.id}

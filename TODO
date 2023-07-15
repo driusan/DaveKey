@@ -16,7 +16,6 @@ Improve styling of threads
     - fix order
     - fix notification
     - scroll to post on thread load
-CWs when applicable
 Add refresh icon in header
 Hashtag - search for users
 WebSocket subscription 

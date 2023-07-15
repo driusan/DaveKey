@@ -51,6 +51,7 @@ export function RenderThread(props) {
           <ConversationContext onProfileClick={props.onProfileClick} posts={conversation} />
           <View style={{flex: 1, borderColor: '#0af', borderWidth: 4}}>
           <Post uri={displayedPost.uri}
+            cw={displayedPost.cw}
             text={displayedPost.text} 
             time={displayedPost.createdAt}
             author={displayedPost.user}
