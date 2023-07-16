@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
 import {useState,useEffect, useCallback, useContext, useRef} from 'react';
-import { FlatListPost, PostModal, UserList, PaginatedPostList } from './Posts';
+import { FlatListPost, PostModal, UserList} from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -27,6 +27,7 @@ import {BookmarksPage} from './Bookmarks';
 import {SearchPage} from './Search';
 import {GalleriesPage} from './Gallery';
 import { PaperProvider, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
+import {PaginatedPostList} from './PaginationMenu';
 
 
 const Stack = createNativeStackNavigator();
@@ -50,7 +51,9 @@ function ActionsStack() {
 
 function HashtagPage({navigation, route}) {
     const tag = route.params?.Tag;
-    // hashtags/users doesn't support pagination
+    if (!tag) {
+        return;
+    }
     return <PaginatedPostList 
         endpoint="notes/search-by-tag"
         params={{tag: tag}}
