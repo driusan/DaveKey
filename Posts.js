@@ -1,6 +1,6 @@
 import MFM from './MFM';
 import { Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal, PanResponder, RefreshControl } from 'react-native';
-import { useRef, useContext, useCallback, useState } from 'react';
+import { useRef, useContext, useCallback, useState, useEffect } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
 import { formatUsername } from './utils';
@@ -12,6 +12,7 @@ import { AccountContext} from './Account';
 import { ServerContext} from './contexts';
 import { useAPI, useAPIPaginator } from './api';
 import { Video, ResizeMode } from 'expo-av';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'; 
 import ImageViewer from 'react-native-image-zoom-viewer';
 
 function PostImage({url, imageHeight, imageWidth, postImages}) {
@@ -96,37 +97,158 @@ function Poll({choices, noteid}) {
     }}>{choicesViews}</View>;
 }
 
-// import RelativeTime from '@yaireo/relative-time'
+function CWIcon({enabled, onPress}) {
+    const theme = useTheme().colors;
+    const color = enabled ? theme.primary : theme.text
+    return (
+      <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center'}}>
+        <Pressable onPress={ () => {
+            if (onPress) {
+                onPress(!enabled);
+            }
+        }}>
+            <MaterialIcons name="warning" size={24} color={color} />
+        </Pressable>
+      </View>
+    );
+}
+function PollIcon({enabled, onPress}) {
+    const theme = useTheme().colors;
+    const color = enabled ? theme.primary : theme.text
+    return (
+      <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center'}}>
+        <Pressable onPress={ () => {
+            if (onPress) {
+                onPress(!enabled);
+            }
+        }}>
+            <MaterialCommunityIcons name="poll" size={24} color={color} />
+        </Pressable>
+      </View>
+    );
+}
+function AttachIcon() {
+    const theme = useTheme().colors;
+    const [enabled, setEnabled] = useState(false);
+    // FIXME: Colour should be based on if attachments exist
+    const color = enabled ? theme.primary : theme.text
+    return (
+      <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center'}}>
+        <Pressable onPress={ () => setEnabled(!enabled)}>
+            <Entypo name="attachment" size={24} color={color} />
+        </Pressable>
+      </View>
+    );
+}
 
+function VisibilityIcon({onVisibilityChanged}) {
+    // FIXME: Toggle through icons 
+    const theme = useTheme().colors;
+    const [toggleState, setState] = useState(0);
+    useEffect( () => {
+        if (onVisibilityChanged) {
+            switch(toggleState) {
+            case 0: onVisibilityChanged("public"); break;
+            case 1: onVisibilityChanged("home"); break;
+            case 2: onVisibilityChanged("followers"); break;
+            case 3: onVisibilityChanged("specified"); break;
+            case 4: onVisibilityChanged("hidden"); break;
+            }
+        }
+    }, [toggleState]);
+    const color = theme.text;
+    const icon = (st) => {
+        switch (st){
+        case 0:
+            return <PostVisibility visibility="public" />
+        case 1:
+            return <PostVisibility visibility="home" />
+        case 2:
+            return <PostVisibility visibility="followers" />
+        case 3:
+            // FIXME: Need way to specify who
+            return <PostVisibility visibility="specified" />
+        case 4:
+            // this doesn't seem to work. Need to look into the calckey code
+            // to see what it means. For now, we only toggle through the
+            // first 4. Change the `% 4` to `% 5` below to enable.
+            return <PostVisibility visibility="hidden" />
+        }
+    }
+    return (
+      <View style={{flex: 1}}>
+        <Pressable onPress={ () => setState((toggleState+1) % 4)}>
+            {icon(toggleState)}
+        </Pressable>
+      </View>
+    );
+}
+function PollPrompt({enabled, choices}) {
+    const theme = useTheme().colors;
+    if (!enabled) {
+        return;
+    }
+    return <View><Text style={{color: theme.text}}>Poll Not implemented</Text></View>
+}
+function CWPrompt({enabled, value, setCW}) {
+    const theme = useTheme();
+    if (!enabled) {
+        return;
+    }
+    return <TextInput 
+                style={{padding: 2, margin: 2, borderColor: theme.border, borderWidth: 2, textAlignVertical: 'top', color: theme.colors.text}}
+                value={value}
+                onChangeText={setCW}
+                placeholderTextColor={theme.dark ? "#777": "#999"}
+                placeholder="CW Text"/>
+
+}
 export function PostModal({show, onClose, replyTo, replyContext}) {
     const author = useContext(AccountContext);
     const server = useContext(ServerContext);
-    const theme = useTheme().colors;
+    const theme = useTheme();
+    const [pollAttached, setPollAttached] = useState(false);
+    const [cwAttached, setCWAttached] = useState(false);
+    const [cw, setCW] = useState('');
     const [content, setContent] = useState('');
+    const [visibility, setVisibility] = useState('public');
     const api = useAPI();
+    console.log('visibility', visibility);
     const postAuthor = (author && author.accountInfo) ?
             <View style={{flex: 3, height: 50}}>
                 <PostAuthor user={author.accountInfo}
                           onProfileClick={() => {}} 
                  />
             </View> : <View />;
-             //console.log(server);
     
     return <Modal animationType="slide" style={{flex: 1}}
                 visible={show}
                 onRequestClose={() => onClose()}>
-        <View style={{flex: 1, backgroundColor: theme.background}}>
+        <View style={{flex: 1, backgroundColor: theme.colors.background}}>
             <View style={{flex: 1, flexDirection: 'row'}}>
               {postAuthor}
-              <View style={{flex: 1, alignItems: 'center'}}><Text style={{flex: 1, textAlign: 'right', color: theme.text}}>Characters left: <Text style={{fontWeight: 'bold'}}>{server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></Text></View>
+              <View style={{flex: 1, flexDirection: 'column', marginTop: 10, paddingRight: 10, alignItems: 'flex-end'}}>
+                  <VisibilityIcon onVisibilityChanged={setVisibility} />
+              </View>
+              <View style={{flex: 1, alignItems: 'center'}}>
+                <Text style={{flex: 1, textAlign: 'right', color: theme.colors.text}}>Characters left: <Text style={{fontWeight: 'bold'}}>{server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></Text>
+              </View>
             </View>
             {replyContext}
             <ScrollView style={{flex: 1}}><MFM style={{flex: 2}} text={content} /></ScrollView>
+            <PollPrompt enabled={pollAttached}/>
+            <View style={{flex: 1, flexDirection: 'row', justifyContent: 'center', padding: 10}}>
+                <CWIcon enabled={cwAttached} onPress={(newState) => setCWAttached(newState)} />
+                <PollIcon enabled={pollAttached} onPress={(newState) => setPollAttached(newState)} />
+                <AttachIcon />
+            </View>
+            <CWPrompt value={cw} setCW={setCW} enabled={cwAttached} />
             <TextInput multiline={true} 
-                style={{flex: 6, padding: 2, margin: 2, borderColor: theme.border, borderWidth: 2, textAlignVertical: 'top', color: theme.text}}
+                style={{flex: 2, padding: 2, margin: 2, borderColor: theme.colors.border, borderWidth: 2, textAlignVertical: 'top', color: theme.colors.text}}
                 autoFocus={true}
                 value={content}
                 onChangeText={setContent}
+                placeholderTextColor={theme.dark ? "#777": "#999"}
                 placeholder="Say something"/>
 
             <View style={{flex: 1, flexDirection: 'row', alignContent: 'stretch', borderWidth: 3}}>
@@ -139,7 +261,8 @@ export function PostModal({show, onClose, replyTo, replyContext}) {
                     text: content,
                     poll: null,
                     localOnly: false,
-                    visibility: "public"
+                    cw: cw,
+                    visibility: visibility, 
                 };
                 if (replyTo) {
                     params['replyId']= replyTo;
@@ -175,6 +298,8 @@ function PostVisibility(props) {
             return <Text>✉️</Text>;
         case 'followers':
             return <Text>🤝</Text>;
+        case 'hidden':
+            return <Text>🤫</Text>;
         default:
         throw new Error('Unhandled visibility: ' + props.visibility);
     }
