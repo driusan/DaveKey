@@ -2,7 +2,7 @@ import { Text, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCalckeyAccount } from './Account';
 import { useEffect, useState } from 'react';
-import { Post, PostModal } from './Posts';
+import { Post } from './Posts';
 
 export function Thread({navigation, route}) {
     const account = useCalckeyAccount();
@@ -47,7 +47,6 @@ export function RenderThread(props) {
     }
     return (
        <View style={{flex: 1}}>
-          <PostModal show={replyTo != null} replyTo={replyTo} onClose={() => setReplyTo(null)} />
           <ConversationContext onProfileClick={props.onProfileClick} posts={conversation} />
           <View style={{flex: 1, borderColor: '#0af', borderWidth: 4}}>
           <Post uri={displayedPost.uri}

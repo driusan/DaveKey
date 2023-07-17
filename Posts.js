@@ -344,6 +344,7 @@ export function CreatePostPage({navigation, route}) {
     const [content, setContent] = useState('');
     const [visibility, setVisibility] = useState('public');
     const [recipients, setRecipients] = useState([]);
+    const replyId = route.params?.replyId;
     const api = useAPI();
     console.log('visibility', visibility);
     const postAuthor = (author && author.accountInfo) ?
@@ -401,6 +402,10 @@ export function CreatePostPage({navigation, route}) {
                     localOnly: false,
                     visibility: visibility, 
                 };
+
+                if (replyId) {
+                    params['replyId']= replyId;
+                }
                 if (cwAttached) {
                     params['cw'] = cw;
                 }
@@ -515,6 +520,7 @@ export function PostContext(props) {
 function PostMenu(props) {
     const account = useContext(AccountContext);
     const server = useContext(ServerContext);
+    const navigation = useNavigation();
     const api = useAPI();
     const theme = useTheme();
     const options = [];
@@ -541,11 +547,9 @@ function PostMenu(props) {
             Alert.alert('Boosted post');
         });
       }} text="Boost" />);
-      if (props.doReply) {
-        options.push(<MenuOption key="reply" onSelect={() => {
-            props.doReply(props.PostId);
-        }} text="Reply" />);
-      };
+      options.push(<MenuOption key="reply" onSelect={() => {
+        navigation.push("Create Post", { replyId: props.PostId });
+      }} text="Reply" />);
       options.push(<MenuOption key="like" onSelect={() => {
         // console.log(server);
         // Alert.alert('should make API call to notes/reactions/create {noteId: props.PostId, reaction: props.DefaultReaction}');
