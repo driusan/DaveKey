@@ -1,5 +1,8 @@
 import MFM from './MFM';
-import { Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, Modal, PanResponder, RefreshControl } from 'react-native';
+import { AntDesign } from '@expo/vector-icons'; 
+
+import { Keyboard, KeyboardAvoidingView, Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, PanResponder, RefreshControl } from 'react-native';
+import { Modal, Portal } from 'react-native-paper';
 import { useRef, useContext, useCallback, useState, useEffect } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -190,6 +193,16 @@ function PollPrompt({enabled, choices}) {
     }
     return <View><Text style={{color: theme.text}}>Poll Not implemented</Text></View>
 }
+
+function Textbox({style, value, onChangeText, placeholder, theme}) {
+    console.log('theme color', theme);
+    return <TextInput 
+                style={{padding: 2, margin: 2, borderColor: theme.colors.border, borderWidth: 2, textAlignVertical: 'top', color: theme.colors.text, backgroundColor: theme.colors.background, ...style}}
+                value={value}
+                onChangeText={onChangeText}
+                placeholderTextColor={theme.dark ? "#777": "#999"}
+                placeholder={placeholder}/>;
+}
 function CWPrompt({enabled, value, setCW}) {
     const theme = useTheme();
     if (!enabled) {
@@ -201,79 +214,204 @@ function CWPrompt({enabled, value, setCW}) {
                 onChangeText={setCW}
                 placeholderTextColor={theme.dark ? "#777": "#999"}
                 placeholder="CW Text"/>
-
 }
-export function PostModal({show, onClose, replyTo, replyContext}) {
+
+function SelectUserModal({show, onDismiss, onUserPress, selected}) {
+    const theme = useTheme();
+    const [username, setUsername] = useState('');
+    const [host, setHost] = useState('');
+    const [matches, setMatches] = useState(null);
+    const api = useAPI();
+    useEffect( () => {
+        api.call("users/search-by-username-and-host", {username: username, host: host, limit: 5}).then( (json) => {
+            console.log(json)
+            setMatches(json);
+        });
+    }, [username, host]);
+    return <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
+        <Portal>
+        <Modal
+        visible={show}
+        transparent={true}
+        animationType="fade"
+        onDismiss={onDismiss}
+            contentContainerStyle={{margin: 20, backgroundColor: theme.colors.card, padding: 20}}
+        >
+            <View>
+                <Text style={{color: theme.colors.text, fontSize: 20, fontWeight: 'bold', padding: 5}}>Select User</Text>
+            </View>
+            <View style={{flexDirection: 'row'}}>
+                <Textbox style={{flex: 1}} placeholder="user" onChangeText={setUsername} value={username} theme={theme}/>
+                <Text style={{color: theme.colors.text, fontSize: 16, fontWeight: 'bold'}}>@</Text>
+                <Textbox style={{flex: 1}} value={host} onChangeText={setHost} theme={theme} placeholder="host" />
+            </View>
+            {matches != null ? <FlatList data={matches}
+                                        renderItem={({item}) => {
+                                            const isSelected = selected.filter( (user) => user.id == item.id).length > 0;
+                                            const border = isSelected ? {
+                                                borderWidth: 1,
+                                                borderColor: theme.colors.primary,
+                                                backgroundColor: theme.colors.primary
+                                            } : { borderWidth: 0}
+                                            
+                                            return <View style={{flex: 1, ...border}} >
+                                                     <PostAuthor theme={theme.colors} onProfileClick={onUserPress} user={item} />
+                                                   </View>
+                                        }
+                                        }
+                                   ListEmptyComponent={<View style={{flex: 1}}>
+                                                          <Text style={{color: theme.colors.text, fontStyle: 'italic'}}>No matches.</Text>
+                                                       </View>}
+ 
+                    /> : null}
+    </Modal></Portal></View>;
+}
+function Recipients({visibility, recipients, onUserAdd, onUserRemove}) {
+    const theme = useTheme().colors;
+    const [showModal, setShowModal] = useState(false);
+    if (visibility !== 'specified') {
+        return;
+    }
+    return (
+      <View>
+         <SelectUserModal show={showModal} onDismiss={() => setShowModal(false)}
+            selected={recipients}
+            onUserPress={(id, user) => { 
+                if (recipients.filter( (user) => user.id == id).length === 0) {
+                    onUserAdd(user);
+                } else {
+                    onUserRemove(user);
+                }
+            }}
+            />
+         <View>
+            <View style={{flexDirection: 'row'}}>
+                <View style={{flex: 1}}>
+                    <Text style={{color: theme.text, fontWeight: 'bold'}}>Recipients</Text>
+                </View>
+                <View style={{flex: 3}}>
+                  <View>
+                    {recipients.map((user) => (
+                        <View style={{flexDirection: 'row', margin: 2}}>
+                           <Text key={user.id} style={{flex: 1,color: theme.primary}}>{formatUsername(user)}</Text>
+                           <Pressable onPress={ () => {
+                               onUserRemove(user);
+                           }}>
+                               <AntDesign style={{alignSelf: 'flex-end'}} name="deleteuser" size={24} color={theme.text} />
+                           </Pressable>
+                        </View>)
+                        )}
+                  </View>
+                  <Pressable onPress={() => setShowModal(true)} style={{paddingTop: 5}}>
+                    <AntDesign name="adduser" size={24} color={theme.text} />
+                  </Pressable>
+                </View>
+            </View>
+         </View>
+      </View>);
+}
+
+function useKeyboard() {
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () =>  setKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
+	console.log('keyboard', isKeyboardVisible);
+  return isKeyboardVisible;
+}
+export function CreatePostPage({navigation, route}) {
     const author = useContext(AccountContext);
     const server = useContext(ServerContext);
     const theme = useTheme();
+    const keyboardShowing = useKeyboard();
+    const [isWriting, setIsWriting] = useState(true);
     const [pollAttached, setPollAttached] = useState(false);
     const [cwAttached, setCWAttached] = useState(false);
     const [cw, setCW] = useState('');
     const [content, setContent] = useState('');
     const [visibility, setVisibility] = useState('public');
+    const [recipients, setRecipients] = useState([]);
     const api = useAPI();
     console.log('visibility', visibility);
     const postAuthor = (author && author.accountInfo) ?
-            <View style={{flex: 3, height: 50}}>
+            <View style={{height: 70, flex: 2}}>
                 <PostAuthor user={author.accountInfo}
                           onProfileClick={() => {}} 
                  />
             </View> : <View />;
     
-    return <Modal animationType="slide" style={{flex: 1}}
-                visible={show}
-                onRequestClose={() => onClose()}>
-        <View style={{flex: 1, backgroundColor: theme.colors.background}}>
-            <View style={{flex: 1, flexDirection: 'row'}}>
-              {postAuthor}
-              <View style={{flex: 1, flexDirection: 'column', marginTop: 10, paddingRight: 10, alignItems: 'flex-end'}}>
-                  <VisibilityIcon onVisibilityChanged={setVisibility} />
-              </View>
-              <View style={{flex: 1, alignItems: 'center'}}>
-                <Text style={{flex: 1, textAlign: 'right', color: theme.colors.text}}>Characters left: <Text style={{fontWeight: 'bold'}}>{server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></Text>
-              </View>
+    const display = isWriting ? 
+            <View style={{flex: 1, alignContent: 'stretch'}}
+                contentContainerStyle={{justfyContent: 'stretch', alignContent: 'stretch'}}
+            >
+                <ScrollView style={{flex: 1}}>
+                    <MFM style={{flex: 1}} text={content} />
+                    <PollPrompt enabled={pollAttached}/>
+                </ScrollView>
+                <View style={{flexDirection: 'row', justifyContent: 'center', padding: 10}}>
+                    <CWIcon enabled={cwAttached} onPress={(newState) => setCWAttached(newState)} />
+                    <PollIcon enabled={pollAttached} onPress={(newState) => setPollAttached(newState)} />
+                    <AttachIcon />
+                </View>
+                <CWPrompt value={cw} setCW={setCW} enabled={cwAttached} />
+                <KeyboardAvoidingView style={{flexDirection: 'column', flex: 1}}>
+                <TextInput multiline={true} 
+                    style={{flex: 2, padding: 2, margin: 2, borderColor: theme.colors.border, borderWidth: 2, textAlignVertical: 'top', color: theme.colors.text}}
+                    autoFocus={true}
+                    value={content}
+                    onChangeText={setContent}
+                    placeholderTextColor={theme.dark ? "#777": "#999"}
+                    placeholder="Say something"/>
+                </KeyboardAvoidingView>
             </View>
-            {replyContext}
-            <ScrollView style={{flex: 1}}><MFM style={{flex: 2}} text={content} /></ScrollView>
-            <PollPrompt enabled={pollAttached}/>
-            <View style={{flex: 1, flexDirection: 'row', justifyContent: 'center', padding: 10}}>
-                <CWIcon enabled={cwAttached} onPress={(newState) => setCWAttached(newState)} />
-                <PollIcon enabled={pollAttached} onPress={(newState) => setPollAttached(newState)} />
-                <AttachIcon />
-            </View>
-            <CWPrompt value={cw} setCW={setCW} enabled={cwAttached} />
-            <TextInput multiline={true} 
-                style={{flex: 2, padding: 2, margin: 2, borderColor: theme.colors.border, borderWidth: 2, textAlignVertical: 'top', color: theme.colors.text}}
-                autoFocus={true}
-                value={content}
-                onChangeText={setContent}
-                placeholderTextColor={theme.dark ? "#777": "#999"}
-                placeholder="Say something"/>
-
+     : <ScrollView style={{flex: 5}}><MFM style={{flex: 2}} text={content} /></ScrollView>
+    const actions = isWriting ? (
+        <View>
+            <Button title="Preview" onPress={ () => {
+                setIsWriting(false);
+            }}/>
+        </View>
+        ) : (
             <View style={{flex: 1, flexDirection: 'row', alignContent: 'stretch', borderWidth: 3}}>
             <View style={{flex: 1, padding: 3}}><Button title="Post" onPress={() => {
                 if (content == '') {
                     Alert.alert('No content', 'Did you want to cancel instead of posting?');
                     return;
                 }
+                if (visibility === 'specified' && recipients.length == 0) {
+                    Alert.alert('No recipients', 'Did you want to cancel instead of posting?');
+                    return;
+                }
                 const params = {
                     text: content,
                     poll: null,
                     localOnly: false,
-                    cw: cw,
                     visibility: visibility, 
                 };
-                if (replyTo) {
-                    params['replyId']= replyTo;
+                if (cwAttached) {
+                    params['cw'] = cw;
+                }
+                if (visibility === 'specified') {
+                    params['visibleUserIds'] = recipients.map( (user) => user.id);
                 }
 
                 api.call("notes/create", params).then(
                     () => {
-                        //console.log(json);
-                        // reset the content for future replies
-                        setContent('');
-                        onClose();
+                        Alert.alert('Posted');
+                        navigation.goBack();
                     }
                 ).catch( (e) => {
                     console.error(e);
@@ -281,13 +419,36 @@ export function PostModal({show, onClose, replyTo, replyContext}) {
                     onClose();
                 });
               }}/></View>
-              <View style={{flex: 1, padding: 3}}><Button style={{flex: 1}} title="Cancel" onPress={() => {
-                  onClose();
+              <View style={{flex: 1, padding: 3}}><Button style={{flex: 1}} title="Edit" onPress={() => {
+                  setIsWriting(true);
               }} /></View>
               </View>
+        )
+    return (
+      <View style={{flex: 1}}>
+        <View style={{flex: 1, backgroundColor: theme.colors.background}}>
+            <View>
+                <View style={{height: 70, flexDirection: 'row', borderColor: 'green', borderWidth: 1}}>
+                  {postAuthor}
+                  <View style={{flex: 1, flexDirection: 'column', marginTop: 10, paddingRight: 10, alignItems: 'flex-end'}}>
+                      <VisibilityIcon onVisibilityChanged={setVisibility} />
+                  </View>
+                  <View style={{flex: 1, alignItems: 'center'}}>
+                    <Text style={{flex: 1, textAlign: 'right', color: theme.colors.text}}>Characters left: <Text style={{fontWeight: 'bold'}}>{server ? server.maxNoteTextLength - content.length: 'unknown'}</Text></Text>
+                  </View>
+                </View>
+            <Recipients recipients={recipients} 
+                onUserAdd={(user) => setRecipients([...recipients, user])}
+                onUserRemove={(user) => setRecipients(recipients.filter( (recip) => recip.id != user.id))}
+                visibility={visibility} />
+            </View>
+            {display}
+            {actions}
         </View>
-    </Modal>;
+      </View>
+    );
 }
+
 function PostVisibility(props) {
     switch (props.visibility) {
         case 'public':
@@ -305,22 +466,22 @@ function PostVisibility(props) {
     }
 }
 export function PostAuthor(props) {
-    const theme = useTheme().colors;
+    const theme = props.theme || useTheme().colors;
     return (
-           <Pressable onPress={() => {
+           <Pressable style={{flex: 2}} onPress={() => {
                if (props.onProfileClick) {
-                   props.onProfileClick(props.user.id);
+                   props.onProfileClick(props.user.id, props.user);
                } else {
                    console.error('No onProfileClick defined');
                }
            }}>
          <View style={{flexDirection: 'row', padding: 5, flex: 1}}>
-               <View style={{paddingRight: 5}}>
+               <View style={{paddingRight: 5, flex: 1}}>
                  <Image style={{width: 40, height: 40}}
                    source={{ uri: props.user.avatarUrl}}
                  />
                </View>
-               <View>
+               <View style={{flex:2, flexDirection: 'column'}}>
                  <Text style={{color: theme.text}}>{props.user.name}</Text>
                  <Text style={{color: theme.text}}>{formatUsername(props.user)}</Text>
                </View>
@@ -607,10 +768,10 @@ export function Post(props) {
 export function UserList(props) {
 
     return <FlatList
-           data={props.users}
-           renderItem={({item}) => <PostAuthor user={item} onProfileClick={props.onProfileClick} />}
-           ListHeaderComponent={<View><Text>Users of {props.tag}</Text></View>}
-           ListFooterComponent={<View><Button title="Load more" onPress={props.loadMore} /></View>}
+               data={props.users}
+               renderItem={({item}) => <PostAuthor user={item} onProfileClick={props.onProfileClick} />}
+               ListHeaderComponent={<View><Text>Users of {props.tag}</Text></View>}
+               ListFooterComponent={<View><Button title="Load more" onPress={props.loadMore} /></View>}
            />
 }
 export function PostList(props) {

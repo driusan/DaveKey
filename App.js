@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
 import {useState,useEffect, useCallback, useContext, useRef} from 'react';
-import { FlatListPost, PostModal, UserList} from './Posts';
+import { FlatListPost, CreatePostPage, UserList} from './Posts';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -39,6 +39,7 @@ function ActionsStack() {
     <Stack.Navigator screenOptions={{}}>
       <Stack.Screen options={{headerShown: false}} name="Timeline" component={Timelines} initialParams={{timelineType: 'hybrid'}}/>
       <Stack.Screen options={{headerShown: false}} name="Profile" component={OtherProfile} />
+      <Stack.Screen name="Create Post" component={CreatePostPage} />
       <Stack.Screen name="Thread" component={Thread} />
       <Stack.Screen name="Hashtag" options={({navigation, route}) => {
           const tag = route.params?.Tag;
@@ -450,8 +451,6 @@ function Timeline({navigation, route}) {
   const theme = useTheme().colors;
   const timeline = useTimeline(account, route.params?.timelineType);
   const [includeBoosts, setIncludeBoosts] = useState(true);
-  const [postModalVisible, setPostModalVisible] = useState(false);
-  const [postReplyId, setPostReplyId] = useState(null);
   console.log(route, route.params?.timelineType);
 
   const onRefresh = useCallback(() => {
@@ -474,7 +473,7 @@ function Timeline({navigation, route}) {
         <FlatList
            data={displayedposts}
            renderItem={({item}) => <FlatListPost post={item} 
-              doReply={(postId) => { setPostReplyId(postId); setPostModalVisible(true); }}
+              doReply={(postId) => { navigation.push("Create Post", { replyTo: postId}) }}
               onProfileClick={profileNavigate}
            />}
            ItemSeparatorComponent={
@@ -482,7 +481,6 @@ function Timeline({navigation, route}) {
            }
            ListHeaderComponent={
              <View>
-               <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
                 <BoostSelect withBoosts={includeBoosts} setWithBoosts={setIncludeBoosts} />
                 {unreadPostNum > 0 ? (
                     <View style={{backgroundColor: theme.background}}>
@@ -498,7 +496,7 @@ function Timeline({navigation, route}) {
            onEndReached={timeline.moreAfter}
            onEndReachedThreshold={0.7}
         />
-        <View style={{position: 'absolute', bottom: 50, right: 50}}><Pressable onPress={() => setPostModalVisible(true)}><AntDesign name="pluscircle" size={48} color="green" /></Pressable></View>
+        <View style={{position: 'absolute', bottom: 50, right: 50}}><Pressable onPress={() => navigation.push("Create Post", {})}><AntDesign name="pluscircle" size={48} color="green" /></Pressable></View>
      <StatusBar style="auto" />
     </View>
   );
