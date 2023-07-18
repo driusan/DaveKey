@@ -2,7 +2,7 @@ import {useAPI, useAPIPaginator} from './api';
 import {useTheme, useNavigation} from '@react-navigation/native';
 import {useState, useEffect, useCallback} from 'react';
 import {StyleSheet, Pressable, FlatList, View, Text, RefreshControl, Button} from 'react-native';
-import {PostModal, FlatListPost} from './Posts';
+import {FlatListPost} from './Posts';
 
 // done: hashtag
 // lists
@@ -82,11 +82,6 @@ export function PaginatedPostList({endpoint, params, emptyMsg, extractNote}) {
            }}
            ItemSeparatorComponent={
                () => <View style={{padding: 5}} />
-           }
-           ListHeaderComponent={
-             <View>
-               <PostModal show={postModalVisible} replyTo={postReplyId} onClose={() => { setPostReplyId(null); setPostModalVisible(false)}} />
-             </View>
            }
            ListEmptyComponent={<View style={styles.container}><Text style={[styles.header, {color: theme.primary}]}>{emptyMsg || 'No Content'}</Text></View>}
            ListFooterComponent={(posts.data && posts.data.length > 0) ? <Button title="Load more" onPress={posts.moreAfter} /> : <View />}

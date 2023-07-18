@@ -996,7 +996,7 @@ export function PostList(props) {
                     author={p.renote.user}
                     content={p.renote}
                     visibility={p.renote.visibility}
-                    emojis={p.emojis}
+                    emojis={p.renote.emojis}
                     doReply={props.doReply}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
@@ -1096,7 +1096,7 @@ export function FlatListPost(props) {
                     author={p.renote.user}
                     content={p.renote}
                     visibility={p.renote.visibility}
-                    emojis={p.emojis}
+                    emojis={p.renote.emojis}
                     reactionEmojis={p.renote.reactionEmojis}
                     onProfileClick={props.onProfileClick} 
                     myAccount={props.myAccount}
