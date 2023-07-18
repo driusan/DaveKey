@@ -1,9 +1,6 @@
 Posting
    - replies should default to same visibility as parent, if visibility if "specified" should include
       person responding to by default
-   - attach poll
-        - preview poll in preview mode
-        - validate options (at least 2 options, none empty) before sending
    - attach image 
         - select from drive
         - upload from device and then select from drive)

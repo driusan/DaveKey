@@ -75,13 +75,15 @@ function Poll({choices, noteid}) {
     const api = useAPI();
     const theme = useTheme().colors;
     const choicesViews = choices.map( (option, i) => {
-        // console.log(option);
         const textStyle = option.isVoted ? { fontWeight: 'bold', color: theme.primary} : {color: theme.text};
         return (
           <View style={{borderWidth: 1, padding: 5, margin: 2, borderColor: theme.border, backgroundColor: theme.background}}
-            key={option.text}>
+            key={i}>
             <Pressable onPress={() => {
-                console.log(i, noteid);
+                // We were in a preview of the post page
+                if (!noteid) {
+                    return;
+                }
                 api.call("notes/polls/vote", {noteId: noteid, choice: i}).then(
                     () => {
                         Alert.alert("Voted", "Voted for " + option.text);
@@ -313,7 +315,7 @@ function PollPrompt({enabled, poll, setPoll}) {
                     return;
                 default:
             }
-            console.log(newval)}}/>
+            }}/>
         {withNewChoice.map( (choice, i) => {
                 return <Textbox key={i}
                     style={{flex: 1}}
@@ -336,7 +338,6 @@ function PollPrompt({enabled, poll, setPoll}) {
 }
 
 function Textbox({style, value, onChangeText, placeholder, theme}) {
-    console.log('theme color', theme);
     return <TextInput 
                 style={{padding: 2, margin: 2, borderColor: theme.colors.border, borderWidth: 2, textAlignVertical: 'top', color: theme.colors.text, backgroundColor: theme.colors.background, ...style}}
                 value={value}
@@ -365,7 +366,6 @@ function SelectUserModal({show, onDismiss, onUserPress, selected}) {
     const api = useAPI();
     useEffect( () => {
         api.call("users/search-by-username-and-host", {username: username, host: host, limit: 5}).then( (json) => {
-            console.log(json)
             setMatches(json);
         });
     }, [username, host]);
@@ -470,7 +470,6 @@ function useKeyboard() {
       keyboardDidShowListener.remove();
     };
   }, []);
-	//console.log('keyboard', isKeyboardVisible);
   return isKeyboardVisible;
 }
 export function CreatePostPage({navigation, route}) {
@@ -485,12 +484,9 @@ export function CreatePostPage({navigation, route}) {
     const [content, setContent] = useState('');
     const [visibility, setVisibility] = useState('public');
     const [recipients, setRecipients] = useState([]);
-    const [pollChoices, setPollChoices] = useState([]);
     const [poll, setPoll] = useState({multiple: false, choices: []});
     const replyId = route.params?.replyId;
     const api = useAPI();
-    console.log('poll2', poll);
-    //console.log('visibility', visibility);
     const postAuthor = (author && author.accountInfo) ?
             <View style={{height: 70, flex: 2}}>
                 <PostAuthor user={author.accountInfo}
@@ -525,7 +521,10 @@ export function CreatePostPage({navigation, route}) {
                     placeholder="Say something"/>
                 </KeyboardAvoidingView>
             </View>
-     : <ScrollView style={{flex: 5}}><MFM style={{flex: 2}} text={content} /></ScrollView>
+     : (<ScrollView style={{flex: 5}}>
+          <MFM style={{flex: 2}} text={content} />
+          {pollAttached ? <Poll choices={poll.choices.map( (text, i) => {return { isVoted: false, text: text, votes: i};})} /> : null}
+        </ScrollView>)
     const actions = isWriting ? (
         <View>
             <Button title="Preview" onPress={ () => {
@@ -557,6 +556,18 @@ export function CreatePostPage({navigation, route}) {
                     params['cw'] = cw;
                 }
                 if (pollAttached) {
+                    if (!poll.choices || poll.choices.length == 0) {
+                            Alert.alert('Missing poll', 'You have attached a poll but not defined any options. Bad user.');
+                            return;
+                    }
+                    if (poll.choices.filter( (option) => (option == null || option == '')).length > 0) {
+                        Alert.alert('Empty option', 'Poll must not have any empty options. Sorry.');
+                        return;
+                    }
+                    if (poll.choices.length < 2) {
+                        Alert.alert('Too few options', 'Poll must have at least 2 choices.');
+                        return;
+                    }
                     params['poll'] = poll;
                 }
                 if (visibility === 'specified') {
@@ -688,12 +699,10 @@ function PostMenu(props) {
                borderBottomWidth: StyleSheet.hairlineWidth,
              }} />);
       options.push(<MenuOption key="boost" onSelect={() => {
-          //console.log('api', api);
         api.call("notes/create", {
           renoteId: props.PostId,
           visibility: 'public',
         }).then ( (json) => {
-            // console.log(json);
             Alert.alert('Boosted post');
         });
       }} text="Boost" />);
@@ -701,13 +710,10 @@ function PostMenu(props) {
         navigation.push("Create Post", { replyId: props.PostId });
       }} text="Reply" />);
       options.push(<MenuOption key="like" onSelect={() => {
-        // console.log(server);
-        // Alert.alert('should make API call to notes/reactions/create {noteId: props.PostId, reaction: props.DefaultReaction}');
         api.call("notes/reactions/create", {
           noteId: props.PostId,
           reaction: server.defaultReaction || '⭐'
         }).then ( (json) => {
-            //console.log(json);
             Alert.alert('Liked post');
         }).catch( (e) => console.warn(e));
       }} text="Like" />);
@@ -715,7 +721,6 @@ function PostMenu(props) {
         api.call("notes/favorites/create", {
           noteId: props.PostId,
         }).then ( (json) => {
-            //console.log(json);
             Alert.alert('Bookmarked post');
         }).catch( (e) => console.warn(e));
       }} text="Bookmark" />);
@@ -760,7 +765,6 @@ function PostHeader(props) {
 
 function useCW(cw, content, emojis, loadThread, onHashtag, onProfileClick) {
     const [CWMode, setCWMode] = useState(cw ? 'hide' : 'show');
-    // console.log(cw, CWMode)
 
     if (CWMode == 'show') {
         if (content) {
@@ -791,7 +795,6 @@ export function Post(props) {
     const theme = useTheme().colors;
     const loadThread = useCallback( () => {
       if (navigation && navigation.push) {
-        console.log("Pushing thread", props.noteid);
         navigation.push("Thread", { PostId: props.noteid});
       }
     }, [props.noteid]);
@@ -816,7 +819,6 @@ export function Post(props) {
       {props.content.files.map((file, i) => {
 
         if (file.type.startsWith('video/')) {
-            // console.log('file', file, status);
             return <Video
                 key={i}
                 style={{flex: 1, height: 400}}
@@ -844,7 +846,6 @@ export function Post(props) {
          {Object.keys(props.content.reactions).map((val) => {
            if (val.startsWith(':') && val.endsWith(':')) {
                const emojiname = val.substr(1, val.length-2);
-               console.log(emojiname, props.reactionEmojis);
 
                 /*
                  <Image style={{width: 40, height: 40}}
@@ -936,7 +937,6 @@ export function PostList(props) {
       <View style={styles.flexer}>
       {posts.map((p, i) => {
           // FIXME: Move this logic into <Post />?
-        //console.log(p);
         if (p.text && p.renote) {
             // QT
             return <Post key={i}
@@ -1033,7 +1033,6 @@ export function PostList(props) {
 export function FlatListPost(props) {
     const p = props.post;
     const theme = useTheme().colors;
-    // console.log(p);
     if (p.text && p.renote) {
         // QT
         return <Post
@@ -1055,7 +1054,6 @@ export function FlatListPost(props) {
                     />;
         } else if (p.text && !p.renote) {
             // Plain post
-            //console.log(p.emojis);
             return <Post 
                 cw={p.cw}
                 uri={p.uri}
