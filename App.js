@@ -1,6 +1,7 @@
 import { DrawerActions } from '@react-navigation/native';
 import { Alert, Linking, useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { en, registerTranslation } from 'react-native-paper-dates'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import  GetAccessToken from './AccessToken';
 import { Button, FlatList, RefreshControl, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -317,6 +318,7 @@ function getTheme(dark) {
 
 export default function App() {
     const account = useCalckeyAccount();
+    registerTranslation('en', en)
     const theme = useColorScheme();
     useNotifications();
     const [serverMeta, setServerMeta] = useState(null);

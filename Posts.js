@@ -2,7 +2,7 @@ import MFM from './MFM';
 import { AntDesign } from '@expo/vector-icons'; 
 
 import { Keyboard, KeyboardAvoidingView, Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, PanResponder, RefreshControl } from 'react-native';
-import { Modal, Portal } from 'react-native-paper';
+import { SegmentedButtons, RadioButton, Switch, Modal, Portal } from 'react-native-paper';
 import { useRef, useContext, useCallback, useState, useEffect } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import 'date-time-format-timezone';
@@ -17,6 +17,8 @@ import { useAPI, useAPIPaginator } from './api';
 import { Video, ResizeMode } from 'expo-av';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'; 
 import ImageViewer from 'react-native-image-zoom-viewer';
+import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
+
 
 function PostImage({url, imageHeight, imageWidth, postImages}) {
     const [displayModal, setDisplayModal] = useState(false);
@@ -186,12 +188,151 @@ function VisibilityIcon({onVisibilityChanged}) {
       </View>
     );
 }
-function PollPrompt({enabled, choices}) {
-    const theme = useTheme().colors;
+
+function PollExpirySelect({onChange}) {
+    const theme = useTheme();
+    const [expiryType, setExpiryType] = useState('in');
+    const [inExpiryUnit, setInExpiryUnit] = useState('days');
+    const [inExpiryValue, setInExpiryValue] = useState("1");
+    const [atExpiryModalState, setAtExpiryModalState] = useState('date');
+    const [atExpiryDate, setAtExpiryDate] = useState(new Date());
+    const atExpiryDateOnDismissModal = useCallback( () => {
+        setAtExpiryModalState('done');
+    }, [setAtExpiryModalState]);
+    const atExpiryDateOnConfirmModal = useCallback( (params) => {
+        setAtExpiryModalState('time');
+        setAtExpiryDate(params.date)
+    }, [setAtExpiryModalState, setAtExpiryDate]);
+    const atExpiryTimeOnDismissModal = useCallback( () => {
+        setAtExpiryModalState('done');
+    }, [setAtExpiryModalState]);
+    const atExpiryTimeOnConfirmModal = useCallback( (params) => {
+        setAtExpiryModalState('done');
+        const newDate = new Date(atExpiryDate.getTime());
+        newDate.setHours(params.hours);
+        newDate.setMinutes(params.minutes);
+        newDate.setSeconds(0);
+        setAtExpiryDate(newDate)
+    }, [setAtExpiryModalState, atExpiryDate, setAtExpiryDate]);
+    useEffect( () => {
+        switch (expiryType) {
+        case 'never': onChange({'type': 'never'}); return;
+        case 'on': onChange({'type': 'on', date: atExpiryDate.getTime()}); return;
+        case 'in': {
+            // expiryAfter seems to be in milliseconds, so multiply by 1000
+            const duration = parseInt(inExpiryValue, 10) * 1000; 
+            switch(inExpiryUnit) {
+            case 'min':
+                onChange({'type': 'in', expireAfter: duration*60});
+                return;
+            case 'hour':
+                onChange({'type': 'in', expireAfter: duration*60*60});
+                return;
+            case 'days':
+                onChange({'type': 'in', expireAfter: duration*60*60*24});
+                return;
+            default:
+                throw new Error('Invalid unit');
+            }
+            }
+        default: throw new Error("Invalid expiryType: " + expiryType);
+        }
+    }, [expiryType, inExpiryUnit, inExpiryValue, atExpiryDate]);
+
+    let subselect = null;
+    switch(expiryType) {
+        case 'never': break;
+        case 'in': subselect = (
+            <View style={{flexDirection: 'row', margin: 5}}>
+                <View style={{width: '20%'}}>
+                    <TextInput style={{flex: 1, borderColor: theme.colors.border, borderWidth: 2, color: theme.colors.text, textAlign: 'right', marginRight: 10, paddingRight: 3}} value={inExpiryValue} 
+                        onChangeText={setInExpiryValue}
+                    inputMode="numeric"/>
+                </View>
+                <View style={{width: '80%', flexDirection: 'row'}}>
+                    <SegmentedButtons style={{flex: 1}} density="high" buttons={[{ value: 'min', label: 'minute(s)'}, {value: 'hour', label: 'hour(s)'}, { value: 'days', label: 'day(s)'}]} value={inExpiryUnit} onValueChange={setInExpiryUnit} />
+                </View>
+            </View>);
+            break;
+        case 'on': subselect = (
+            <View>
+                <DatePickerModal
+                    locale="en"
+                    mode="single"
+                    visible={atExpiryModalState=='date'}
+                    date={atExpiryDate}
+                    onDismiss={atExpiryDateOnDismissModal}
+                    onConfirm={atExpiryDateOnConfirmModal}
+                    />
+                <TimePickerModal
+                    visible={atExpiryModalState=='time'}
+                    onDismiss={atExpiryTimeOnDismissModal}
+                    onConfirm={atExpiryTimeOnConfirmModal}
+                 />
+            <View style={{margin: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+                <Text style={{color: theme.colors.text}}>{atExpiryDate.toLocaleDateString()} at {atExpiryDate.toTimeString()}</Text>
+                <Pressable style={{marginLeft: 10}} onPress={() => setAtExpiryModalState('date')}><AntDesign name="edit" size={24} color={theme.colors.text} /></Pressable>
+            </View></View>);
+    }
+    return <View>
+        <View style={{flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap'}}>
+            <View style={{width: '20%'}}>
+                <Text style={{flex: 1, color: theme.colors.text}}>Expires</Text>
+            </View>
+            <View style={{width: '80%', flexDirection: 'row'}}>
+                <SegmentedButtons style={{flex: 1}} density="high" buttons={[{ value: 'in', label: 'in'},{ value: 'on', label: 'on'}, {value: 'never', label: 'never'}]} value={expiryType} onValueChange={setExpiryType}/>
+            </View>
+        </View>
+        {subselect}
+    </View>
+}
+function PollPrompt({enabled, poll, setPoll}) {
+    const theme = useTheme();
+    const [isMultiple, setIsMultiple] = useState(false);
     if (!enabled) {
         return;
     }
-    return <View><Text style={{color: theme.text}}>Poll Not implemented</Text></View>
+    const withNewChoice = [...poll.choices, ""]
+    return <View>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Text style={{color: theme.colors.text}}>Allow multiple choices</Text>
+            <Switch value={poll.multiple} onValueChange={() => {
+                setPoll({...poll, multiple: !poll.multiple});
+            }} />
+        </View>
+        <PollExpirySelect onChange={(newval) => {
+            switch(newval.type) {
+                case 'in':
+                    setPoll({multiple: poll.multiple, choices: poll.choices, expiredAfter: newval.expireAfter});
+                    return;
+                case 'on':
+                    setPoll({multiple: poll.multiple, choices: poll.choices, expiresAt: newval.date});
+                    return;
+                case 'never':
+                    setPoll({multiple: poll.multiple, choices: poll.choices});
+                    return;
+                default:
+            }
+            console.log(newval)}}/>
+        {withNewChoice.map( (choice, i) => {
+                return <Textbox key={i}
+                    style={{flex: 1}}
+                    value={choice}
+                    onChangeText={(val) => {
+                        if (i == poll.choices.length) {
+                                const newchoices = [...poll.choices, val];
+                                setPoll({...poll, choices: newchoices});
+                            } else {
+                                let newchoices = [...poll.choices];
+                                newchoices[i] = val;
+                                setPoll({...poll, choices: newchoices});
+                            }
+                    }}
+                    theme={theme}
+                    placeholder={"Option " + (i+1)} />
+
+                })}
+    </View>;
 }
 
 function Textbox({style, value, onChangeText, placeholder, theme}) {
@@ -329,7 +470,7 @@ function useKeyboard() {
       keyboardDidShowListener.remove();
     };
   }, []);
-	console.log('keyboard', isKeyboardVisible);
+	//console.log('keyboard', isKeyboardVisible);
   return isKeyboardVisible;
 }
 export function CreatePostPage({navigation, route}) {
@@ -344,9 +485,12 @@ export function CreatePostPage({navigation, route}) {
     const [content, setContent] = useState('');
     const [visibility, setVisibility] = useState('public');
     const [recipients, setRecipients] = useState([]);
+    const [pollChoices, setPollChoices] = useState([]);
+    const [poll, setPoll] = useState({multiple: false, choices: []});
     const replyId = route.params?.replyId;
     const api = useAPI();
-    console.log('visibility', visibility);
+    console.log('poll2', poll);
+    //console.log('visibility', visibility);
     const postAuthor = (author && author.accountInfo) ?
             <View style={{height: 70, flex: 2}}>
                 <PostAuthor user={author.accountInfo}
@@ -360,7 +504,10 @@ export function CreatePostPage({navigation, route}) {
             >
                 <ScrollView style={{flex: 1}}>
                     <MFM style={{flex: 1}} text={content} />
-                    <PollPrompt enabled={pollAttached}/>
+                    <PollPrompt enabled={pollAttached} poll={poll} setPoll={setPoll}
+                        modifyChoice={ (i, newval) => {
+                        }}
+                    />
                 </ScrollView>
                 <View style={{flexDirection: 'row', justifyContent: 'center', padding: 10}}>
                     <CWIcon enabled={cwAttached} onPress={(newState) => setCWAttached(newState)} />
@@ -408,6 +555,9 @@ export function CreatePostPage({navigation, route}) {
                 }
                 if (cwAttached) {
                     params['cw'] = cw;
+                }
+                if (pollAttached) {
+                    params['poll'] = poll;
                 }
                 if (visibility === 'specified') {
                     params['visibleUserIds'] = recipients.map( (user) => user.id);
