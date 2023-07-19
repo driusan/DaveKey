@@ -29,6 +29,7 @@ import {SearchPage} from './Search';
 import {GalleriesPage} from './Gallery';
 import { PaperProvider, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
 import {PaginatedPostList} from './PaginationMenu';
+import {reuseableActionsStack} from './actionsStack';
 
 
 const Stack = createNativeStackNavigator();
@@ -39,28 +40,11 @@ function ActionsStack() {
   return (
     <Stack.Navigator screenOptions={{}}>
       <Stack.Screen options={{headerShown: false}} name="Timeline" component={Timelines} initialParams={{timelineType: 'hybrid'}}/>
-      <Stack.Screen options={{headerShown: false}} name="Profile" component={OtherProfile} />
-      <Stack.Screen name="Create Post" component={CreatePostPage} />
-      <Stack.Screen name="Thread" component={Thread} />
-      <Stack.Screen name="Hashtag" options={({navigation, route}) => {
-          const tag = route.params?.Tag;
-          return { title: tag ? '#' + tag : 'Hashtag'};
-
-      }} component={HashtagPage} />
+      {reuseableActionsStack()}
     </Stack.Navigator>
   );
 }
 
-function HashtagPage({navigation, route}) {
-    const tag = route.params?.Tag;
-    if (!tag) {
-        return;
-    }
-    return <PaginatedPostList 
-        endpoint="notes/search-by-tag"
-        params={{tag: tag}}
-    />;
-}
 function Logout({navigation}) {
     const account = useContext(AccountContext);
     useEffect( () => {

@@ -4,6 +4,7 @@ import {useState, useEffect, useCallback} from 'react';
 import {Pressable, FlatList, View, Text} from 'react-native';
 import {PaginatedMenuPage, PaginatedPostList} from './PaginationMenu';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {reuseableActionsStack} from './actionsStack';
 
 const Stack = createNativeStackNavigator();
 function ActionsStack() {
@@ -15,6 +16,7 @@ function ActionsStack() {
           return { title: name ? name : 'Antenna'};
 
       }} component={AntennaPostsPage} />
+      {reuseableActionsStack()}
     </Stack.Navigator>
   );
 }

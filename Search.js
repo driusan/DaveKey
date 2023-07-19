@@ -4,6 +4,7 @@ import {useState, useEffect, useCallback} from 'react';
 import {useColorScheme, TextInput, StyleSheet, Pressable, FlatList, View, Text, Button} from 'react-native';
 import {PaginatedMenuPage, PaginatedPostList} from './PaginationMenu';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {reuseableActionsStack} from './actionsStack';
 
 const Stack = createNativeStackNavigator();
 function ActionsStack() {
@@ -15,6 +16,7 @@ function ActionsStack() {
           return { title: term ? 'Results for ' + term: 'Search Results'};
 
       }} component={SearchPostsPage} />
+      {reuseableActionsStack()}
     </Stack.Navigator>
   );
 }
