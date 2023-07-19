@@ -13,7 +13,7 @@ import { AccountContext} from './Account';
 
 
 
-function useDrive() {
+export function useDrive() {
     const api = useAPI();
     const account = useContext(AccountContext);
     const files = useAPIPaginator("drive/files", {});

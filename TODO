@@ -2,8 +2,7 @@ Posting
    - replies should default to same visibility as parent, if visibility if "specified" should include
       person responding to by default
    - attach image 
-        - select from drive
-        - upload from device and then select from drive)
+        - upload from device and then select from drive
    - inline GUI editor?
         - bold
         - italic

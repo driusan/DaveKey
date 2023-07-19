@@ -2,6 +2,7 @@ import MFM from './MFM';
 import { AntDesign } from '@expo/vector-icons'; 
 
 import { Keyboard, KeyboardAvoidingView, Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, PanResponder, RefreshControl } from 'react-native';
+import {useWindowDimensions} from 'react-native';
 import { SegmentedButtons, RadioButton, Switch, Modal, Portal } from 'react-native-paper';
 import { useRef, useContext, useCallback, useState, useEffect } from 'react';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
@@ -18,6 +19,7 @@ import { Video, ResizeMode } from 'expo-av';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'; 
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
+import {useDrive} from './Drive';
 
 
 function PostImage({url, imageHeight, imageWidth, postImages}) {
@@ -71,6 +73,7 @@ function PostImage({url, imageHeight, imageWidth, postImages}) {
          </Pressable>
      </View>);
 }
+
 function Poll({choices, noteid}) {
     const api = useAPI();
     const theme = useTheme().colors;
@@ -134,14 +137,56 @@ function PollIcon({enabled, onPress}) {
       </View>
     );
 }
-function AttachIcon() {
+function AttachIcon({files, setFiles}) {
+    const dims = useWindowDimensions();
     const theme = useTheme().colors;
     const [enabled, setEnabled] = useState(false);
+    const drive = useDrive();
     // FIXME: Colour should be based on if attachments exist
-    const color = enabled ? theme.primary : theme.text
+    const [showModal, setShowModal] = useState(false);
+    const onModalDismiss = useCallback( () => { setShowModal(false)}, [setShowModal]);
+    const color = Object.keys(files).length > 0 ? theme.primary : theme.text
+    const imageSize = dims.width / 2;
+
     return (
       <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center'}}>
-        <Pressable onPress={ () => setEnabled(!enabled)}>
+        <Portal>
+            <Modal
+                visible={showModal}
+                transparent={true}
+                animationType="fade"
+                onDismiss={onModalDismiss}
+                    contentContainerStyle={{margin: 20, backgroundColor: theme.card, padding: 20}}
+                >
+                    <View style={{flexDirection: 'row', marginBottom: 15}}>
+                        <Text style={{flex: 2, color: theme.text, fontSize: 20, fontWeight: 'bold', padding: 5}}>Select Media</Text>
+                        <Button style={{flex: 1}} title="Done" onPress={onModalDismiss}/>
+                    </View>
+                    <FlatList data={drive.files}
+                        numColumns={2}
+                        renderItem={ ({item}) => { 
+                            const isSelected = files[item.id] ? true : false;
+                            const border = isSelected ? { borderColor: theme.primary, borderWidth: 2} : {}
+                            return <Pressable style={{flex: 1}} onPress={ () => {
+                                console.log(files, item.id);
+                                const newSelectedFiles = {...files};
+                                if (files[item.id]) {
+                                    delete newSelectedFiles[item.id];
+                                } else {
+                                    newSelectedFiles[item.id] = item;
+                                }
+                                console.log(newSelectedFiles);
+                                setFiles(newSelectedFiles);
+                        }}><View style={{flex: 1, margin: 5, ...border}}>
+                            <Image style={{width: '100%', flexGrow: 1}} height={imageSize} resizeMode="contain" source={{uri: item.thumbnailUrl}} /></View></Pressable>}}
+
+                        ListFooterComponent={<Button title="Load more" onPress={files.moreAfter} />}
+                        onEndReached={files.moreAfter}
+                        onEndReachedThreshold={0.7}
+                    />
+            </Modal>
+        </Portal>
+        <Pressable onPress={ () => setShowModal(true)}>
             <Entypo name="attachment" size={24} color={color} />
         </Pressable>
       </View>
@@ -487,6 +532,7 @@ export function CreatePostPage({navigation, route}) {
     const [poll, setPoll] = useState({multiple: false, choices: []});
     const replyId = route.params?.replyId;
     const api = useAPI();
+    const [selectedFiles, setSelectedFiles] = useState({})
     const postAuthor = (author && author.accountInfo) ?
             <View style={{height: 70, flex: 2}}>
                 <PostAuthor user={author.accountInfo}
@@ -504,11 +550,12 @@ export function CreatePostPage({navigation, route}) {
                         modifyChoice={ (i, newval) => {
                         }}
                     />
+                    {Object.keys(selectedFiles).map( (fileid, i) => <PostMediaFile key={i} file={selectedFiles[fileid]} />)}
                 </ScrollView>
                 <View style={{flexDirection: 'row', justifyContent: 'center', padding: 10}}>
                     <CWIcon enabled={cwAttached} onPress={(newState) => setCWAttached(newState)} />
                     <PollIcon enabled={pollAttached} onPress={(newState) => setPollAttached(newState)} />
-                    <AttachIcon />
+                    <AttachIcon files={selectedFiles} setFiles={setSelectedFiles}/>
                 </View>
                 <CWPrompt value={cw} setCW={setCW} enabled={cwAttached} />
                 <KeyboardAvoidingView style={{flexDirection: 'column', flex: 1}}>
@@ -524,6 +571,7 @@ export function CreatePostPage({navigation, route}) {
      : (<ScrollView style={{flex: 5}}>
           <MFM style={{flex: 2}} text={content} />
           {pollAttached ? <Poll choices={poll.choices.map( (text, i) => {return { isVoted: false, text: text, votes: i};})} /> : null}
+          {Object.keys(selectedFiles).map( (fileid, i) => <PostMediaFile key={i} file={selectedFiles[fileid]} />)}
         </ScrollView>)
     const actions = isWriting ? (
         <View>
@@ -572,6 +620,14 @@ export function CreatePostPage({navigation, route}) {
                 }
                 if (visibility === 'specified') {
                     params['visibleUserIds'] = recipients.map( (user) => user.id);
+                }
+                const nFiles = Object.keys(selectedFiles).length;
+                if (nFiles > 16) {
+                    Alert.alert('Too many attachments', 'There is a limit of 16 files attached per post.');
+                    return;
+                }
+                if (nFiles > 0) {
+                    params['fileIds'] = Object.keys(selectedFiles);
                 }
 
                 api.call("notes/create", params).then(
@@ -789,6 +845,30 @@ function useCW(cw, content, emojis, loadThread, onHashtag, onProfileClick) {
             </View>
         </View>
 }
+
+function PostMediaFile({file, siblings}) {
+    const [isMuted, setIsMuted] = useState(true)
+    if (file.type.startsWith('video/')) {
+        return (<Video
+            style={{flex: 1, height: 400}}
+            source={{uri: file.url}}
+            useNativeControls
+            shouldPlay={true}
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping
+            isMuted={isMuted}
+        />);
+    } else if (file.type.startsWith('image/')) {
+        return (
+           <PostImage postImages={(siblings || []).map((file, i) => { return { url: file.url } })}
+              url={file.url}
+              imageWidth={file.properties.width}
+              imageHeight={file.properties.height}
+           />);
+    } else {
+        return <View><Text>Unhandled attachment type {file.type}</Text></View>;
+    }
+}
 export function Post(props) {
     const navigation = useNavigation();
     const api = useAPI();
@@ -814,33 +894,13 @@ export function Post(props) {
         />;
     });
 
+    // console.log('files', props.content.files);
     const images = props.content.files ? (
-      <View>
-      {props.content.files.map((file, i) => {
-
-        if (file.type.startsWith('video/')) {
-            return <Video
-                key={i}
-                style={{flex: 1, height: 400}}
-                source={{uri: file.url}}
-                useNativeControls
-                shouldPlay={true}
-                resizeMode={ResizeMode.CONTAIN}
-                isLooping
-                isMuted
-            />;
-            return <View key={i}><Text>Unhandled video type {file.type}</Text></View>;
-        } else if (file.type.startsWith('image/')) {
-            return <PostImage key={i} index={i} postImages={
-                    props.content.files.map((file, i) => {
-                        return { url: file.url }
-                })}
-                url={file.url} imageWidth={file.properties.width} imageHeight={file.properties.height} />;
-        } else {
-            return <View key={i}><Text>Unhandled attachment type {file.type}</Text></View>;
-        }
-      })}
-      </View>) : <View />;
+        <View style={{flex: 1}}>
+        {props.content.files.map( (file, i) => {
+              return <PostMediaFile key={i} file={file} siblings={props.content.files} />
+        })}</View>
+      ) : null;
     const reactions = props.content.reactions && Object.keys(props.content.reactions).length > 0 ? (
        <View style={{marginTop: 15, paddingTop: 5, borderStyle: 'dotted', borderTopColor: 'green', borderTopWidth: 2, flexDirection: 'row', flexWrap: 'wrap'}}>
          {Object.keys(props.content.reactions).map((val) => {
@@ -930,6 +990,7 @@ export function UserList(props) {
            />
 }
 export function PostList(props) {
+    const theme = useTheme().colors;
     const posts = props.withBoosts ? props.posts : props.posts.filter((p) => {
         return p.text !== null;
     });
@@ -967,6 +1028,7 @@ export function PostList(props) {
                 visibility={p.visibility}
                 reply={p.reply}
                 emojis={p.emojis}
+                files={p.files}
                 doReply={props.doReply}
                 onProfileClick={props.onProfileClick} 
                 myAccount={props.myAccount}
@@ -1065,6 +1127,7 @@ export function FlatListPost(props) {
                 visibility={p.visibility}
                 reply={p.reply}
                 emojis={p.emojis}
+                files={p.files}
                 reactionEmojis={p.reactionEmojis}
                 doReply={props.doReply}
                 onProfileClick={props.onProfileClick} 
