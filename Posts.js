@@ -680,7 +680,7 @@ export function PostAuthor(props) {
                  />
                </View>
                <View style={{flex:2, flexDirection: 'column'}}>
-                 <Text style={{color: theme.text}}>{props.user.name}</Text>
+                 <MFM text={props.user.name} emojis={props.user.emojis} />
                  <Text style={{color: theme.text}}>{formatUsername(props.user)}</Text>
                </View>
          </View>

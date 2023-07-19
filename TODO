@@ -12,7 +12,6 @@ Posting
 Follow / Unfollow users
 Block/Mute users
 Improve styling of threads
-    - fix order
     - fix notification
     - scroll to post on thread load
 Add refresh icon in header
