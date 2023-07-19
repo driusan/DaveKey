@@ -24,46 +24,22 @@ import {useDrive} from './Drive';
 
 function PostImage({url, imageHeight, imageWidth, postImages}) {
     const [displayModal, setDisplayModal] = useState(false);
-    const modal = () => {
-        if (displayModal == false) {
-            return null;
-        }
-        const dims = Dimensions.get('window');
-        const height = imageHeight > dims.height ? dims.height : imageHeight;
-        return <Modal animationType="fade" transparent={true}>
-            <View style={{backgroundColor: 'rgba(0, 0, 0, 0.8)', height: dims.height, width: dims.width}}>
-               <ImageViewer 
-                onCancel={() => setDisplayModal(false)}
-                imageUrls={postImages}
-                saveToLocalByLongPress={false}
-                enableSwipeDown={true}
-                useNativeDriver={true}
-                />
-            </View>
-    </Modal>; 
-    };
-
-/*
-                   <Animated.View
-                       style={
-                        {transform: [
-                            {translateX: changeX},
-                            {translateY: changeY}
-                         ]
-                        }
-                       }
-                       {...panResponder.panHandlers}>
-                   <Image
-                           height={height}
-                           source={{ uri: url}}
-                           resizeMode={'contain'}
-                           resizeMethod={'auto'} 
-                    />
-                    </Animated.View>
-                    */
+    const dims = Dimensions.get('window');
     return (<View>
-        {modal()}
-        <Pressable onPress={() => { setDisplayModal(true) }}>
+        <Portal>
+            <Modal visible={displayModal} animationType="fade" transparent={true}>
+                <View style={{backgroundColor: 'rgba(0, 0, 0, 0.8)', height: dims.height, width: dims.width}}>
+                   <ImageViewer 
+                        onCancel={() => setDisplayModal(false)}
+                        imageUrls={postImages}
+                        saveToLocalByLongPress={false}
+                        enableSwipeDown={true}
+                        useNativeDriver={true}
+                    />
+                </View>
+            </Modal>
+        </Portal>
+        <Pressable onPress={() => { console.log('pressed');setDisplayModal(true) }}>
             <Image 
                source={{ uri: url}}
                height={imageHeight > 400 ? 400 : imageHeight}

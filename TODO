@@ -21,8 +21,6 @@ WebSocket subscription
     - update notification count in Drawer when unreadNotification
       or readAllNotifications comes in
 Pinned posts on profiles
-- Move pages that can be linked to from posts to a higher actions stack
-  than the drawer (ie. hashtag, profile, thread)
 - Drive
     - Upload
         - Last onProgress doesn't always fire to update status?
