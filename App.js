@@ -130,14 +130,16 @@ function useTimeline(account, type) {
       const ws = account.ws;
       const tlName = type + 'Timeline';
       console.log('Subscribing to websocket', '"' + type + 'Timeline"')
-      ws.send(JSON.stringify({
-        type: 'connect',
-        body: {
-          'channel': type + 'Timeline',
-          'id': type + 'Timeline',
-          'params': { },
-        }
-      }));
+      if (ws.readyState == WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'connect',
+            body: {
+              'channel': type + 'Timeline',
+              'id': type + 'Timeline',
+              'params': { },
+            }
+          }));
+      }
   }, [account, type, account.ws]);
 
   useEffect( () => {
@@ -432,6 +434,20 @@ function Timelines() {
       </Tab.Navigator>
     );
 }
+
+function uniq(a) {
+    const seen = {};
+    if (!a) {
+        return a;
+    }
+    return a.filter(function(item) {
+        if (seen.hasOwnProperty(item.id)) {
+            return false;
+        }
+        seen[item.id] = true;
+        return true;
+    });
+}
 function Timeline({navigation, route}) {
   const account = useContext(AccountContext);
   const theme = useTheme().colors;
@@ -454,10 +470,11 @@ function Timeline({navigation, route}) {
   let refreshControl = <RefreshControl refreshing={timeline.isRefreshing} onRefresh={onRefresh} enabled={true}/>;
   const displayedposts = includeBoosts ? timeline.posts : timeline.posts.filter((post) => post.text);
   const unreadPostNum = timeline.unreadPosts[route.params?.timelineType]?.length || 0
+
   return (
     <View style={{flex: 1}}>
         <FlatList
-           data={displayedposts}
+           data={uniq(displayedposts)}
            renderItem={({item}) => <FlatListPost post={item} 
               doReply={(postId) => { navigation.push("Create Post", { replyTo: postId}) }}
               onProfileClick={profileNavigate}
