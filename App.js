@@ -135,10 +135,20 @@ function useTimeline(account, type) {
             type: 'connect',
             body: {
               'channel': type + 'Timeline',
-              'id': type + 'Timeline',
+              'id': tlName,
               'params': { },
             }
           }));
+      }
+      return () => {
+          if (ws.readyState == WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: 'disconnect',
+                body: {
+                  'id': tlName,
+                }
+              }));
+          }
       }
   }, [account, type, account.ws]);
 
