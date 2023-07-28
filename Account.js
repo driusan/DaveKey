@@ -19,6 +19,8 @@ function websocketMessageHandler(timelineCB) {
               case 'unreadNotification':
                 // FIXME: Increase count in sidebar
                 ToastAndroid.show('New notification', ToastAndroid.SHORT);
+                // console.log(body);
+                scheduleNotification(body.body)
                 break;
               case 'readAllNotifications':
                 // FIXME: Set count in sidebar
