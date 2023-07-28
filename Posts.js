@@ -1,7 +1,7 @@
 import MFM from './MFM';
 import { AntDesign } from '@expo/vector-icons'; 
 
-import { Keyboard, KeyboardAvoidingView, Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, PanResponder, RefreshControl } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Animated, Dimensions, FlatList, StyleSheet, Pressable, Text, TextInput, ScrollView, View, Image, Button, Alert, PanResponder, RefreshControl, ToastAndroid } from 'react-native';
 import {useWindowDimensions} from 'react-native';
 import { SegmentedButtons, RadioButton, Switch, Modal, Portal } from 'react-native-paper';
 import { useRef, useContext, useCallback, useState, useEffect } from 'react';
@@ -608,7 +608,8 @@ export function CreatePostPage({navigation, route}) {
 
                 api.call("notes/create", params).then(
                     () => {
-                        Alert.alert('Posted');
+                        ToastAndroid.showWithGravity('Posted', ToastAndroid.SHORT, ToastAndroid.TOP);
+                        // Alert.alert('Posted');
                         navigation.goBack();
                     }
                 ).catch( (e) => {

@@ -3,7 +3,7 @@ import * as mfm from 'mfm-js';
 import { FlatListPost, PostContext, PostAuthor } from './Posts';
 import { useRef, useEffect, useState } from 'react';
 import { useAPI } from './api';
-import { formatUsername} from './utils';
+import { formatUsername, scheduleNotification} from './utils';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import MFM from './MFM';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -249,88 +249,6 @@ export function useNotifications() {
         // BackgroundFetch.unregisterTaskAsync(NOTIFICATION_TASK);
       }
     }, []);
-}
-
-function scheduleNotification(obj) {
-  switch(obj.type) {
-  case 'reaction':
-    Notifications.scheduleNotificationAsync({
-      content: {
-        title: obj.reaction + " reaction by " + formatUsername(obj.user),
-        body: obj.note.text,
-        data: {
-          notificationId: obj.id,
-          noteId: obj.note.id,
-          url: "calckey://notes/" + obj.note.id,
-        }
-      },
-      trigger: null,
-    });
-    break;
-  case 'followRequestAccepted':
-    // open profile? 
-    Notifications.scheduleNotificationAsync({
-      content: {
-        title: formatUsername(obj.user) + ' follow request accepted',
-        data: {
-          notificationId: obj.id,
-          url: "calckey://profiles/" + obj.user.id,
-        },
-      },
-      trigger: null,
-    });
-    break;
-  case 'reply':
-    Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Reply from ' + formatUsername(obj.user),
-        body: obj.note.text,
-        data: {
-          notificationId: obj.id,
-          noteId: obj.note.id,
-          url: "calckey://notes/" + obj.note.id,
-          visibility: obj.note.visibility,
-          visibileUserIds: obj.note.visibleUserIds,
-        },
-        categoryIdentifier: "reply",
-      },
-      trigger: null,
-    });
-    break;
-  case 'follow':
-    // open profile? follow back?
-    Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Followed by ' + formatUsername(obj.user),
-        data: {
-          notificationId: obj.id,
-          url: "calckey://profiles/" + obj.user.id,
-        },
-
-      },
-      trigger: null,
-    });
-    break;
-  case 'mention':
-    Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Mentioned by ' + formatUsername(obj.user),
-        body: obj.note.text,
-        data: {
-          notificationId: obj.id,
-          noteId: obj.note.id,
-          url: "calckey://notes/" + obj.note.id,
-          visibility: obj.note.visibility,
-          visibileUserIds: obj.note.visibleUserIds,
-        },
-        categoryIdentifier: "mention",
-      },
-      trigger: null,
-    });
-    break;
-  default:
-    console.log('unhandled notification type', obj.type);
-  }
 }
 
 export function NotificationsPage() {
