@@ -114,13 +114,13 @@ function useTimeline(account, type) {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNo, setRefreshNo] = useState(0);
   const onMessage = useCallback( (e) => {
-          console.log('Received message');
+          // console.log('Received message');
           const body = JSON.parse(e.data).body;
           if (body.id === 'timelineChannel') {
-              console.log('msg on timeline', body.body);
+              // console.log('msg on timeline', body.body);
               setStreamedPosts([body.body, ...streamedPosts]);
           }
-          console.log('event listener in useTimeline', e);
+          // console.log('event listener in useTimeline', e);
   }, [streamedPosts, type]);
   useEffect( () => {
       if (!account.ws) {
@@ -161,16 +161,16 @@ function useTimeline(account, type) {
           console.log('Received message');
           const body = JSON.parse(e.data).body;
           if (body.id === type + 'Timeline') {
-              console.log('msg on timeline ', type, body.body);
+              //console.log('msg on timeline ', type, body.body);
               if(!streamedPosts[type]) {
                   streamedPosts[type] = [body.body];
               } else {
                   streamedPosts[type] = [body.body, ...streamedPosts[type]];
               }
-              console.log('setting streamed posts', streamedPosts);
+              // console.log('setting streamed posts', streamedPosts);
               setStreamedPosts({...streamedPosts});
           }
-          console.log('event listener in useTimeline', e);
+          // console.log('event listener in useTimeline', e);
       };
       account.ws.addEventListener('message', onMessage);
       return () => {
@@ -246,10 +246,12 @@ function useTimeline(account, type) {
       posts: posts,
       isRefreshing: refreshing,
       addUnreadPosts: () => {
+          const markerIndex = streamedPosts[type].length;
           console.log(type, streamedPosts);
           setPosts([...streamedPosts[type], ...posts]);
           streamedPosts[type] = [];
           setStreamedPosts({...streamedPosts});
+          return markerIndex;
       },
       refreshTimeline: () => {
           setRefreshNo(refreshNo+1);
@@ -458,11 +460,41 @@ function uniq(a) {
         return true;
     });
 }
+
+function NewPostMarker() {
+    const theme = useTheme().colors;
+    return (
+      <View style={{fontWeight: 'bold', flexDirection: 'row', textAlign: 'center', padding: 10, margin: 5, justifyContent: 'space-between'}}>
+        <View style={{flexDirection: 'row'}}>
+            <AntDesign name="arrowup" size={24} color={theme.primary} style={{paddingRight: 10}}/>
+            <Text style={{color: theme.primary, fontWeight: 'bold', textAlign: 'center'}}>New Posts</Text>
+        </View>
+        <View style={{flexDirection: 'row'}}>
+            <Text style={{color: theme.primary, fontWeight: 'bold', textAlign: 'center'}}>Old Posts</Text>
+            <AntDesign name="arrowdown" size={24} color={theme.primary} style={{paddingLeft: 10}}/>
+        </View>
+      </View>
+    );
+}
 function Timeline({navigation, route}) {
   const account = useContext(AccountContext);
   const theme = useTheme().colors;
   const timeline = useTimeline(account, route.params?.timelineType);
   const [includeBoosts, setIncludeBoosts] = useState(true);
+  const [newMarker, setNewMarker] = useState(null);
+  const flatRef = useRef(null);
+  useEffect(() => {
+      if (newMarker !== null && flatRef.current) {
+          // index is 0-indexed, newMarker is 1-indexed
+          flatRef.current.scrollToIndex({
+            index: newMarker-1,
+            animated: true,
+            viewPosition: 1, // align the bottom of the post so that the new post
+                             // marker is visible
+            viewOffset: 10,
+          });
+      }
+  }, [newMarker]);
   console.log(route, route.params?.timelineType);
 
   const onRefresh = useCallback(() => {
@@ -484,20 +516,32 @@ function Timeline({navigation, route}) {
   return (
     <View style={{flex: 1}}>
         <FlatList
+           ref={flatRef}
            data={uniq(displayedposts)}
-           renderItem={({item}) => <FlatListPost post={item} 
-              doReply={(postId) => { navigation.push("Create Post", { replyTo: postId}) }}
-              onProfileClick={profileNavigate}
-           />}
+           initialScrollIndex={newMarker}
+           renderItem={({item, index}) => {
+              return (
+                <View>
+                  {index == newMarker ? <NewPostMarker /> : null}
+                  <FlatListPost post={item} 
+                      doReply={(postId) => { navigation.push("Create Post", { replyTo: postId}) }}
+                       onProfileClick={profileNavigate}
+                />
+                </View>
+                );
+           }}
            ItemSeparatorComponent={
                () => <View style={{padding: 5}} />
            }
+           extraData={newMarker}
            ListHeaderComponent={
              <View>
                 <BoostSelect withBoosts={includeBoosts} setWithBoosts={setIncludeBoosts} />
                 {unreadPostNum > 0 ? (
                     <View style={{backgroundColor: theme.background}}>
-                        <Button title={"Load " + unreadPostNum + " new posts"} onPress={timeline.addUnreadPosts} />
+                        <Button title={"Load " + unreadPostNum + " new posts"} onPress={() => {
+                            setNewMarker(timeline.addUnreadPosts());
+                        }}/>
                     </View>) : <View />
                 }
              </View>
